@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package address;
+
+// 📁 Files Service - handles file uploads, storage, and management
+service AddressService {
+
+  rpc VerifyAddress(VerifyAddressRequest) returns (AddressResponse);
+  rpc CreateOrUpdateAddress(CreateAddressRequest) returns (AddressResponse);
+
+}
+
+message Address {
+  optional string address_id = 1;
+  optional string street = 2;
+  optional string building = 3;
+  optional string apartment = 4;
+  optional string district = 5;
+  optional string city = 6;
+  optional string state = 7;
+  optional string postal_code = 8;
+  optional string country = 9;
+  optional string landmark = 10;
+  optional string direction_url = 11;
+  optional double latitude = 12;
+  optional double longitude = 13;
+}
+
+message CreateAddressRequest {
+  string entity_type = 1;
+  string entity_id = 2;
+  string street = 3;
+  string building = 4;
+  string apartment = 5;
+  string district = 6;
+  string city = 7;
+  string state = 8;
+  string postal_code = 9;
+  string country = 10;
+  string landmark = 11;
+  string direction_url = 12;
+  double latitude = 13;
+  double longitude = 14;
+}
+
+// 📝 REQUEST MESSAGES
+
+message VerifyAddressRequest {
+  string entity_type = 1;
+  string entity_id = 2;
+}
+
+message CreateAddressResponse {
+  Address address = 1;
+  bool status = 2;
+}
+
+message AddressResponse {
+  Address address = 1;
+  bool status = 2;
+}
+

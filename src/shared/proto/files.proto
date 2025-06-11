@@ -1,0 +1,352 @@
+syntax = "proto3";
+
+package files;
+
+// 📁 Files Service - handles file uploads, storage, and management
+service FilesService {
+
+  rpc VerifyFile(VerifyFileRequest) returns (VerifyFileResponse);
+  rpc CreateOrUpdateFile(CreateOrUpdateFileRequest) returns (CreateOrUpdateFileResponse);
+  // Temporary Upload System (Two-Phase)
+  rpc UploadTemporaryFile(UploadTemporaryFileRequest) returns (TempFileResponse);
+  rpc ConfirmFile(ConfirmFileRequest) returns (ConfirmFileResponse);
+  rpc GetTempFile(GetTempFileRequest) returns (TempFileResponse);
+  rpc GetTempFilesByUser(GetTempFilesByUserRequest) returns (GetTempFilesResponse);
+  
+  // Direct Upload (Original)
+  rpc UploadFile(UploadFileRequest) returns (FileUploadResponse);
+  rpc UploadMultipleFiles(UploadMultipleFilesRequest) returns (MultipleFileUploadResponse);
+  
+  // Upload Sessions (Batch)
+  rpc CreateUploadSession(CreateUploadSessionRequest) returns (UploadSessionResponse);
+  rpc ConfirmUploadSession(ConfirmUploadSessionRequest) returns (ConfirmUploadSessionResponse);
+  rpc GetUploadSession(GetUploadSessionRequest) returns (UploadSessionResponse);
+  
+  // File Management
+  rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
+  rpc GetFileInfo(GetFileInfoRequest) returns (FileInfoResponse);
+  rpc GetUserFiles(GetUserFilesRequest) returns (GetUserFilesResponse);
+  
+  // File Processing Status
+  rpc GetProcessingStatus(GetProcessingStatusRequest) returns (ProcessingStatusResponse);
+  rpc RetryProcessing(RetryProcessingRequest) returns (RetryProcessingResponse);
+}
+
+// 📝 REQUEST MESSAGES
+
+message VerifyFileRequest {
+  string entity_type = 1;
+  string entity_id = 2;
+}
+
+message CreateOrUpdateFileRequest {
+  string entity_type = 1;
+  string entity_id = 2;
+  string file_url = 3;
+}
+
+message CreateOrUpdateFileResponse {
+  string file_url = 1;
+}
+
+message VerifyFileResponse {
+  string file_url = 1;
+}
+
+message UploadTemporaryFileRequest {
+  bytes file_data = 1;
+  string file_name = 2;
+  string mime_type = 3;
+  string user_id = 4;
+  optional string metadata = 5; // JSON string
+  optional string session_id = 6;
+}
+
+message ConfirmFileRequest {
+  string file_id = 1;
+  string user_id = 2;
+  optional string additional_metadata = 3; // JSON string
+}
+
+message GetTempFileRequest {
+  string file_id = 1;
+}
+
+message GetTempFilesByUserRequest {
+  string user_id = 1;
+  optional int32 limit = 2;
+  optional int32 offset = 3;
+}
+
+message UploadFileRequest {
+  bytes file_data = 1;
+  string file_name = 2;
+  string mime_type = 3;
+  string user_id = 4;
+  optional string metadata = 5; // JSON string
+}
+
+message UploadMultipleFilesRequest {
+  repeated FileUploadData files = 1;
+  string user_id = 2;
+  optional string metadata = 3; // JSON string
+  optional bool temporary = 4; // default true
+  optional string session_id = 5;
+}
+
+message FileUploadData {
+  bytes file_data = 1;
+  string file_name = 2;
+  string mime_type = 3;
+}
+
+message CreateUploadSessionRequest {
+  string user_id = 1;
+  int32 expected_files = 2;
+  optional int32 expires_in_minutes = 3; // default 30
+}
+
+message ConfirmUploadSessionRequest {
+  string session_id = 1;
+  string user_id = 2;
+  repeated string files_to_keep = 3;
+}
+
+message GetUploadSessionRequest {
+  string session_id = 1;
+  string user_id = 2;
+}
+
+message DeleteFileRequest {
+  string file_url = 1;
+  string user_id = 2;
+}
+
+message GetFileInfoRequest {
+  string file_id = 1;
+  string user_id = 2;
+}
+
+message GetUserFilesRequest {
+  string user_id = 1;
+  optional FileType file_type = 2;
+  optional int32 limit = 3;
+  optional int32 offset = 4;
+}
+
+message GetProcessingStatusRequest {
+  string file_id = 1;
+  string user_id = 2;
+}
+
+message RetryProcessingRequest {
+  string file_id = 1;
+  string user_id = 2;
+}
+
+// 📤 RESPONSE MESSAGES
+
+message TempFileResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional TempFile temp_file = 3;
+}
+
+message GetTempFilesResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated TempFile temp_files = 3;
+  int32 total_count = 4;
+}
+
+message ConfirmFileResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional string permanent_file_id = 3;
+  optional string file_name = 4;
+  optional string cloudinary_url = 5;
+  optional FileType file_type = 6;
+  optional string upload_job_id = 7;
+}
+
+message FileUploadResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional string file_id = 3;
+  optional string file_name = 4;
+  optional string cloudinary_url = 5;
+  optional FileType file_type = 6;
+  optional string upload_job_id = 7;
+}
+
+message MultipleFileUploadResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated FileUploadResult results = 3;
+  int32 total_files = 4;
+  int32 successful_uploads = 5;
+}
+
+message FileUploadResult {
+  bool success = 1;
+  optional string error = 2;
+  optional string file_id = 3;
+  optional string file_name = 4;
+  optional string cloudinary_url = 5;
+  optional FileType file_type = 6;
+  optional TempFileStatus status = 7;
+  optional string expires_at = 8;
+  optional string uploaded_at = 9;
+}
+
+message UploadSessionResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional UploadSession session = 3;
+}
+
+message ConfirmUploadSessionResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional string session_id = 3;
+  repeated ConfirmFileResponse confirmed_files = 4;
+  repeated string deleted_files = 5;
+  optional UploadSessionStatus status = 6;
+}
+
+message DeleteFileResponse {
+  bool success = 1;
+  optional string error = 2;
+  string message = 3;
+}
+
+message FileInfoResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional FileInfo file_info = 3;
+}
+
+message GetUserFilesResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated FileInfo files = 3;
+  int32 total_count = 4;
+}
+
+message ProcessingStatusResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional ProcessingStatus status = 3;
+  optional string processing_error = 4;
+  optional int32 progress_percentage = 5;
+}
+
+message RetryProcessingResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional string job_id = 3;
+  string message = 4;
+}
+
+// 🏗️ DATA MODELS
+
+message TempFile {
+  string file_id = 1;
+  string user_id = 2;
+  string file_name = 3;
+  int64 file_size = 4;
+  string mime_type = 5;
+  FileType file_type = 6;
+  string cloudinary_url = 7;
+  TempFileStatus status = 8;
+  optional string metadata = 9; // JSON string
+  optional string session_id = 10;
+  string expires_at = 11;
+  string created_at = 12;
+  string updated_at = 13;
+}
+
+message UploadSession {
+  string session_id = 1;
+  string user_id = 2;
+  int32 expected_files = 3;
+  int32 uploaded_files = 4;
+  UploadSessionStatus status = 5;
+  optional string upload_token = 6;
+  optional string metadata = 7; // JSON string
+  string expires_at = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message FileInfo {
+  string file_id = 1;
+  string file_name = 2;
+  string original_name = 3;
+  int64 file_size = 4;
+  FileType file_type = 5;
+  string mime_type = 6;
+  string file_url = 7;
+  optional string thumbnail_url = 8;
+  optional string compressed_url = 9;
+  bool is_processed = 10;
+  ProcessingStatus processing_status = 11;
+  optional string processing_error = 12;
+  FileVisibility visibility = 13;
+  int32 download_count = 14;
+  int32 view_count = 15;
+  bool is_public = 16;
+  string uploaded_by = 17;
+  optional string company_id = 18;
+  optional string branch_id = 19;
+  optional string entity_type = 20;
+  optional string entity_id = 21;
+  optional string alt_text = 22;
+  optional string description = 23;
+  repeated string tags = 24;
+  optional string metadata = 25; // JSON string
+  string created_at = 26;
+  string updated_at = 27;
+  optional string deleted_at = 28;
+}
+
+// 🏷️ ENUMS
+
+enum FileType {
+  FILE_TYPE_IMAGE = 0;
+  FILE_TYPE_VIDEO = 1;
+  FILE_TYPE_AUDIO = 2;
+}
+
+enum TempFileStatus {
+  TEMP_FILE_STATUS_TEMPORARY = 0;
+  TEMP_FILE_STATUS_CONFIRMING = 1;
+  TEMP_FILE_STATUS_EXPIRED = 2;
+  TEMP_FILE_STATUS_FAILED = 3;
+}
+
+enum UploadSessionStatus {
+  UPLOAD_SESSION_STATUS_ACTIVE = 0;
+  UPLOAD_SESSION_STATUS_CONFIRMING = 1;
+  UPLOAD_SESSION_STATUS_COMPLETED = 2;
+  UPLOAD_SESSION_STATUS_EXPIRED = 3;
+  UPLOAD_SESSION_STATUS_CANCELLED = 4;
+}
+
+enum ProcessingStatus {
+  PROCESSING_STATUS_PENDING = 0;
+  PROCESSING_STATUS_PROCESSING = 1;
+  PROCESSING_STATUS_COMPLETED = 2;
+  PROCESSING_STATUS_FAILED = 3;
+  PROCESSING_STATUS_CANCELLED = 4;
+}
+
+enum FileVisibility {
+  FILE_VISIBILITY_PUBLIC = 0;
+  FILE_VISIBILITY_PRIVATE = 1;
+  FILE_VISIBILITY_ORGANIZATION = 2;
+  FILE_VISIBILITY_BRANCH = 3;
+  FILE_VISIBILITY_ROLE_RESTRICTED = 4;
+}
+
+

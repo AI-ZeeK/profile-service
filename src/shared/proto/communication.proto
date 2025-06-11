@@ -1,0 +1,299 @@
+syntax = "proto3";
+
+package communication;
+
+// 💬 Communication Service - handles chats, messages, and real-time communication
+service CommunicationService {
+  // Chat Management
+  rpc CreateChat(CreateChatRequest) returns (ChatResponse);
+  rpc GetChat(GetChatRequest) returns (ChatResponse);
+  rpc GetUserChats(GetUserChatsRequest) returns (GetUserChatsResponse);
+  rpc UpdateChat(UpdateChatRequest) returns (ChatResponse);
+  rpc DeleteChat(DeleteChatRequest) returns (DeleteChatResponse);
+  
+  // Message Management  
+  rpc SendMessage(SendMessageRequest) returns (MessageResponse);
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
+  rpc UpdateMessage(UpdateMessageRequest) returns (MessageResponse);
+  rpc DeleteMessage(DeleteMessageRequest) returns (DeleteMessageResponse);
+  
+  // Chat Participants
+  rpc AddParticipant(AddParticipantRequest) returns (ParticipantResponse);
+  rpc RemoveParticipant(RemoveParticipantRequest) returns (ParticipantResponse);
+  rpc GetParticipants(GetParticipantsRequest) returns (GetParticipantsResponse);
+  
+  // Message Status & Read Receipts
+  rpc MarkMessagesAsRead(MarkAsReadRequest) returns (MarkAsReadResponse);
+  rpc GetUnreadCounts(GetUnreadCountsRequest) returns (GetUnreadCountsResponse);
+  
+  // Real-time subscriptions (for WebSocket events)
+  rpc GetChatEvents(ChatEventsRequest) returns (stream ChatEventResponse);
+}
+
+// 📝 REQUEST MESSAGES
+
+message CreateChatRequest {
+  string name = 1;
+  ChatType chat_type = 2;
+  string creator_id = 3;
+  repeated string participant_ids = 4;
+  optional string avatar_url = 5;
+}
+
+message GetChatRequest {
+  string chat_id = 1;
+  string user_id = 2;
+}
+
+message GetUserChatsRequest {
+  string user_id = 1;
+  optional int32 limit = 2;
+  optional int32 offset = 3;
+}
+
+message UpdateChatRequest {
+  string chat_id = 1;
+  string user_id = 2;
+  optional string name = 3;
+  optional string avatar_url = 4;
+  optional ChatStatus status = 5;
+}
+
+message DeleteChatRequest {
+  string chat_id = 1;
+  string user_id = 2;
+}
+
+message SendMessageRequest {
+  string chat_id = 1;
+  string sender_id = 2;
+  string content = 3;
+  MessageType type = 4;
+  repeated string media_urls = 5;
+  optional string file_url = 6;
+  optional int64 file_size = 7;
+  optional string file_type = 8;
+  optional int32 duration = 9;
+}
+
+message GetMessagesRequest {
+  string chat_id = 1;
+  string user_id = 2;
+  optional int32 limit = 3;
+  optional int32 offset = 4;
+  optional string before_message_id = 5;
+  optional string after_message_id = 6;
+}
+
+message UpdateMessageRequest {
+  string message_id = 1;
+  string user_id = 2;
+  optional string content = 3;
+  repeated string media_urls = 4;
+}
+
+message DeleteMessageRequest {
+  string message_id = 1;
+  string user_id = 2;
+}
+
+message AddParticipantRequest {
+  string chat_id = 1;
+  string user_id = 2;
+  string new_participant_id = 3;
+  optional bool is_admin = 4;
+}
+
+message RemoveParticipantRequest {
+  string chat_id = 1;
+  string user_id = 2;
+  string participant_id = 3;
+}
+
+message GetParticipantsRequest {
+  string chat_id = 1;
+  string user_id = 2;
+}
+
+message MarkAsReadRequest {
+  string chat_id = 1;
+  string user_id = 2;
+  repeated string message_ids = 3;
+}
+
+message GetUnreadCountsRequest {
+  string user_id = 1;
+  repeated string chat_ids = 2;
+}
+
+message ChatEventsRequest {
+  string user_id = 1;
+  repeated string chat_ids = 2;
+}
+
+// 📤 RESPONSE MESSAGES
+
+message ChatResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional Chat chat = 3;
+}
+
+message GetUserChatsResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated ChatWithDetails chats = 3;
+  int32 total_count = 4;
+}
+
+message DeleteChatResponse {
+  bool success = 1;
+  optional string error = 2;
+  string chat_id = 3;
+}
+
+message MessageResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional Message message = 3;
+}
+
+message GetMessagesResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated Message messages = 3;
+  int32 total_count = 4;
+  optional string next_cursor = 5;
+}
+
+message DeleteMessageResponse {
+  bool success = 1;
+  optional string error = 2;
+  string message_id = 3;
+}
+
+message ParticipantResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional ChatParticipant participant = 3;
+}
+
+message GetParticipantsResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated ChatParticipant participants = 3;
+}
+
+message MarkAsReadResponse {
+  bool success = 1;
+  optional string error = 2;
+  int32 marked_count = 3;
+}
+
+message GetUnreadCountsResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated UnreadCount unread_counts = 3;
+}
+
+message ChatEventResponse {
+  string event_type = 1;
+  string chat_id = 2;
+  optional Message message = 3;
+  optional ChatParticipant participant = 4;
+  optional Chat chat = 5;
+  string timestamp = 6;
+}
+
+// 🏗️ DATA MODELS
+
+message Chat {
+  string chat_id = 1;
+  optional string name = 2;
+  optional string avatar_url = 3;
+  ChatType chat_type = 4;
+  ChatStatus status = 5;
+  string created_at = 6;
+  string updated_at = 7;
+  optional string deleted_at = 8;
+}
+
+message ChatWithDetails {
+  string chat_id = 1;
+  optional string name = 2;
+  optional string avatar_url = 3;
+  ChatType chat_type = 4;
+  ChatStatus status = 5;
+  bool is_admin = 6;
+  string joined_at = 7;
+  optional Message last_message = 8;
+  int32 unread_count = 9;
+  int32 participant_count = 10;
+  string created_at = 11;
+  string updated_at = 12;
+}
+
+message Message {
+  string message_id = 1;
+  string chat_id = 2;
+  string sender_id = 3;
+  string content = 4;
+  repeated string media_urls = 5;
+  MessageType type = 6;
+  MessageStatus status = 7;
+  string created_at = 8;
+  string updated_at = 9;
+  optional string deleted_at = 10;
+  optional int32 duration = 11;
+  optional string file_url = 12;
+  optional int64 file_size = 13;
+  optional string file_type = 14;
+}
+
+message ChatParticipant {
+  string chat_id = 1;
+  string user_id = 2;
+  string joined_at = 3;
+  bool is_admin = 4;
+  bool is_active = 5;
+  int32 unread_count = 6;
+}
+
+message UnreadCount {
+  string chat_id = 1;
+  int32 count = 2;
+  string last_read_at = 3;
+}
+
+// 🏷️ ENUMS
+
+enum ChatType {
+  CHAT_TYPE_DIRECT = 0;
+  CHAT_TYPE_GROUP = 1;
+  CHAT_TYPE_CHANNEL = 2;
+}
+
+enum ChatStatus {
+  CHAT_STATUS_PENDING = 0;
+  CHAT_STATUS_ACTIVE = 1;
+  CHAT_STATUS_ARCHIVED = 2;
+  CHAT_STATUS_DELETED = 3;
+}
+
+enum MessageType {
+  MESSAGE_TYPE_TEXT = 0;
+  MESSAGE_TYPE_IMAGE = 1;
+  MESSAGE_TYPE_VIDEO = 2;
+  MESSAGE_TYPE_AUDIO = 3;
+  MESSAGE_TYPE_FILE = 4;
+  MESSAGE_TYPE_VOICE_NOTE = 5;
+  MESSAGE_TYPE_SYSTEM = 6;
+}
+
+enum MessageStatus {
+  MESSAGE_STATUS_PENDING = 0;
+  MESSAGE_STATUS_SENT = 1;
+  MESSAGE_STATUS_DELIVERED = 2;
+  MESSAGE_STATUS_READ = 3;
+  MESSAGE_STATUS_FAILED = 4;
+} 

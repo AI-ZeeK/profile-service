@@ -1,0 +1,253 @@
+/* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { ADDRESS_TYPE_ENUM, FILE_ENTITY_TYPE_ENUM } from 'prisma/enum';
+import { UserAuthorizedRequest } from 'src/interfaces/user.interface';
+import { Prisma, User } from '@prisma/client';
+import { UpdateUserDto } from './dto/create-user.dto';
+import { FilesService } from 'src/modules/files/files.service';
+import { AddressService } from 'src/modules/address/address.service';
+import { Logger } from '@nestjs/common';
+
+type UserWithAvatar<T = {}> = User & {
+  avatar_url: string | null;
+} & T;
+
+@Injectable()
+export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private filesService: FilesService,
+    private addressService: AddressService,
+  ) {}
+  async findOne<T extends Prisma.UserInclude>(
+    where: Prisma.UserWhereUniqueInput,
+    include?: T,
+    sample_data?: boolean,
+  ) {
+    try {
+      const userData = await this.prisma.user.findUnique({
+        where,
+        include: {
+          user_roles: {
+            where: {
+              is_active: true,
+            },
+          },
+          business_users: true,
+          ...include,
+        },
+      });
+
+      if (!userData) {
+        return null;
+      }
+
+      const address = await this.addressService.verifyAddress({
+        entity_type: ADDRESS_TYPE_ENUM.USER_HOME,
+        entity_id: userData.user_id,
+      });
+
+      const avatarFile = await this.filesService.verifyFile({
+        entity_type: FILE_ENTITY_TYPE_ENUM.USER_AVATAR,
+        entity_id: userData.user_id,
+      });
+
+      const user_role = userData.user_roles.find((role) => role.is_active);
+
+      const business_user = userData.business_users.find(
+        (user) => user.is_active,
+      );
+
+      return {
+        ...userData,
+        address,
+        avatar_url: avatarFile?.file_url || null,
+        user_role: user_role,
+        business_user: business_user,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async fetchByEmail({ email }: { email: string }) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email: email.toLowerCase(),
+        },
+      });
+
+      if (!user)
+        return {
+          status: false,
+          message: 'User with email does not exist',
+          data: null,
+        };
+      return {
+        status: true,
+        message: 'User with email exists',
+        data: user,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async updateUserStatus({
+    user_id,
+    last_seen,
+  }: {
+    user_id: string;
+    last_seen: string;
+  }) {
+    try {
+      const user = await this.prisma.user.update({
+        where: { user_id },
+        data: { last_seen },
+      });
+      return user;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async updateUser({
+    req_user,
+    data,
+  }: {
+    req_user: UserAuthorizedRequest;
+    data: UpdateUserDto;
+  }) {
+    const results = {
+      user: null as any,
+      address: { success: false, error: null as string | null },
+      avatar: { success: false, error: null as string | null },
+      overall_success: false,
+    };
+
+    try {
+      // Step 1: Update user basic info (Critical - if this fails, stop)
+      const user = await this.prisma.user.update({
+        where: { user_id: req_user.user.user_id },
+        data: {
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone_number: data.phone_number,
+        },
+      });
+
+      results.user = user;
+      results.overall_success = true; // At least user update succeeded
+
+      // Step 2: Handle address update (Non-critical - continue if fails)
+      if (data.address) {
+        try {
+          this.logger.log(`Updating address for user: ${user.user_id}`);
+
+          await this.addressService.createOrUpdateAddress({
+            entity_type: ADDRESS_TYPE_ENUM.USER_HOME,
+            entity_id: user.user_id,
+            street: data.address.street || '',
+            building: data.address.building || '',
+            apartment: data.address.apartment || '',
+            district: data.address.district || '',
+            city: data.address.city || '',
+            state: data.address.state || '',
+            postal_code: data.address.postal_code || '',
+            country: data.address.country || '',
+            landmark: data.address.landmark || '',
+            direction_url: data.address.direction_url || '',
+            latitude: data.address.latitude || 0,
+            longitude: data.address.longitude || 0,
+          });
+
+          results.address.success = true;
+          this.logger.log(
+            `Address updated successfully for user: ${user.user_id}`,
+          );
+        } catch (addressError) {
+          results.address.error = addressError.message;
+          this.logger.warn(
+            `Address service failed for user ${user.user_id}: ${addressError.message}`,
+          );
+          // Continue execution - don't fail the whole operation
+        }
+      }
+
+      // Step 3: Handle avatar update (Non-critical - continue if fails)
+      if (data.avatar_url) {
+        try {
+          this.logger.log(`Updating avatar for user: ${user.user_id}`);
+
+          await this.filesService.createOrUpdateFile({
+            entity_type: FILE_ENTITY_TYPE_ENUM.USER_AVATAR,
+            entity_id: user.user_id,
+            file_url: data.avatar_url,
+          });
+
+          results.avatar.success = true;
+          this.logger.log(
+            `Avatar updated successfully for user: ${user.user_id}`,
+          );
+        } catch (fileError) {
+          results.avatar.error = fileError.message;
+          this.logger.warn(
+            `Files service failed for user ${user.user_id}: ${fileError.message}`,
+          );
+          // Continue execution - don't fail the whole operation
+        }
+      }
+
+      // Log overall results
+      this.logger.log(`User update completed for ${user.user_id}:`, {
+        user_updated: true,
+        address_updated: results.address.success,
+        avatar_updated: results.avatar.success,
+        partial_failure: !results.address.success || !results.avatar.success,
+      });
+
+      return {
+        ...user,
+        _service_results: results, // Include service results for debugging
+      };
+    } catch (error) {
+      // Critical failure - user update failed
+      this.logger.error(`Critical failure in user update: ${error.message}`);
+      throw new BadRequestException(`Failed to update user: ${error.message}`);
+    }
+  }
+
+  async updateUserBasic({
+    req_user,
+    data,
+  }: {
+    req_user: UserAuthorizedRequest;
+    data: Partial<UpdateUserDto>;
+  }) {
+    try {
+      // Update only basic user info - no address or avatar
+      const user = await this.prisma.user.update({
+        where: { user_id: req_user.user.user_id },
+        data: {
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone_number: data.phone_number,
+        },
+      });
+
+      return user;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+}

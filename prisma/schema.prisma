@@ -1,0 +1,275 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// Profile Service - User Identity & Authentication
+// Domain: User management, authentication, basic roles, platform administration
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["profiles", "platform", "roles"]
+}
+
+// ============================================================================
+// USERS & PROFILES
+// ============================================================================
+
+model User {
+  user_id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  first_name          String?     @default("") @db.VarChar(50)
+  last_name           String?     @default("") @db.VarChar(50)
+  password            String?     @default("")
+  date_of_birth       DateTime    @default(now())
+  email               String      @unique @db.VarChar(255)
+  phone_number        String?     @unique @db.VarChar(20)
+  backup_phone_number String?     @unique @db.VarChar(20)
+  email_verified      Boolean?    @default(false)
+  phone_verified      Boolean?    @default(false)
+  kyc_verified        Boolean?    @default(false)
+  is_blocked          Boolean?    @default(false)
+  fcm_token           String      @default("")
+  refresh_token       String      @default("")
+  last_seen           String      @default("online")
+  account_type        AccountType @default(INDIVIDUAL)
+  permission_level    Int         @default(1)
+  created_at          DateTime    @default(now())
+  updated_at          DateTime    @updatedAt
+  deleted_at          DateTime?   @db.Timestamptz(6)
+
+  // Local relationships
+  platform_staff          PlatformStaff[]
+  user_roles              UserRole[]
+  business_users          BusinessUser[]
+  permission_restrictions UserPermissionRestriction[]
+  restricted_permissions  UserPermissionRestriction[] @relation("restricted_by")
+  verifications           Verification[]
+  staff                   Staff[]
+
+  @@index([email], map: "idx_users_email")
+  @@index([phone_number], map: "idx_users_phone_number")
+  @@map("users")
+  @@schema("profiles")
+}
+
+model BusinessUser {
+  business_user_id String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String             @db.Uuid
+  email            String             @unique @db.VarChar(255)
+  phone_number     String?            @unique @db.VarChar(20)
+  organization_id  String             @db.Uuid // Reference to Organization Service
+  access_type      BusinessAccessType @default(CREATOR)
+  access_level     Int                @default(1)
+  is_active        Boolean            @default(true)
+  notes            String?            @db.Text
+  created_at       DateTime           @default(now())
+  updated_at       DateTime           @updatedAt
+  deleted_at       DateTime?          @db.Timestamptz(6)
+
+  // Relations
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([user_id, is_active], name: "unique_active_user")
+  @@unique([user_id, organization_id])
+  @@index([user_id])
+  @@index([organization_id])
+  @@map("business_users")
+  @@schema("profiles")
+}
+
+model Staff {
+  staff_id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  company_id       String   @db.Uuid // Reference to Organization Service
+  branch_id        String?  @db.Uuid // Reference to Organization Service
+  user_id          String   @db.Uuid
+  role_id          String?  @db.Uuid // Reference to Organization Service
+  department_id    String?  @db.Uuid // Reference to Organization Service
+  designation      String?
+  profile_complete Boolean  @default(false)
+  payroll_active   Boolean  @default(true)
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([user_id, is_active])
+  @@index([company_id])
+  @@index([branch_id])
+  @@index([user_id])
+  @@map("staff")
+  @@schema("profiles")
+}
+
+model Verification {
+  verification_id String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String              @db.Uuid
+  otp_code        String              @db.VarChar(6) // 6-digit OTP
+  purpose         VerificationPurpose
+  expires_at      DateTime
+  created_at      DateTime            @default(now())
+  updated_at      DateTime            @updatedAt
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@index([user_id, purpose], map: "idx_verification_user_purpose")
+  @@map("verifications")
+  @@schema("profiles")
+}
+
+// ============================================================================
+// PLATFORM ADMINISTRATION
+// ============================================================================
+
+model PlatformStaff {
+  platform_staff_id String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String   @db.Uuid
+  role_id           Int
+  is_active         Boolean? @default(true)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  user User         @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  role PlatformRole @relation(fields: [role_id], references: [role_id], onDelete: Cascade)
+
+  @@map("platform_staff")
+  @@schema("platform")
+}
+
+model PlatformRole {
+  role_id     Int      @id @default(autoincrement())
+  role_name   String?  @unique @db.VarChar(50) // e.g., Super Admin, Admin
+  description String?  @default("")
+  is_active   Boolean? @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+  deleted_at  DateTime? @db.Timestamptz(6)
+
+  platform_staff            PlatformStaff[]
+  platform_role_permissions PlatformRolePermission[]
+
+  @@index([role_name], map: "idx_platform_roles_role_name")
+  @@map("platform_roles")
+  @@schema("platform")
+}
+
+model PlatformPermission {
+  permission_id Int     @id @default(autoincrement())
+  permission    String  @unique @db.VarChar(50) // e.g., manage_users, manage_settings
+  description   String? @default("")
+
+  role_permissions PlatformRolePermission[]
+
+  @@map("platform_permissions")
+  @@schema("platform")
+}
+
+model PlatformRolePermission {
+  role_id       Int
+  permission_id Int
+
+  role       PlatformRole       @relation(fields: [role_id], references: [role_id], onDelete: Cascade)
+  permission PlatformPermission @relation(fields: [permission_id], references: [permission_id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+  @@map("platform_role_permissions")
+  @@schema("platform")
+}
+
+// ============================================================================
+// BASIC ROLES & PERMISSIONS
+// ============================================================================
+
+model Role {
+  role_id     Int      @id @default(autoincrement())
+  role_name   String?  @unique @db.VarChar(50)
+  description String?  @default("")
+  is_active   Boolean? @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+  deleted_at  DateTime? @db.Timestamptz(6)
+
+  user_roles UserRole[]
+
+  @@index([role_name], map: "idx_roles_role_name")
+  @@map("roles")
+  @@schema("roles")
+}
+
+model UserRole {
+  user_id   String  @db.Uuid
+  role_name String  @default("")
+  is_active Boolean @default(false)
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  role Role @relation(fields: [role_name], references: [role_name], onDelete: Cascade)
+
+  @@id([user_id, role_name])
+  @@unique([user_id, is_active])
+  @@map("user_roles")
+  @@schema("roles")
+}
+
+model UserPermissionRestriction {
+  restriction_id   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String    @db.Uuid
+  permission_name  String    @db.VarChar(50)
+  restriction_type String    @db.VarChar(50) // e.g., 'payroll', 'branch', 'page'
+  is_active        Boolean   @default(true)
+  reason           String?   @db.Text
+  restricted_by    String    @db.Uuid
+  restricted_at    DateTime  @default(now())
+  expires_at       DateTime?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  deleted_at       DateTime? @db.Timestamptz(6)
+
+  // Relations
+  user               User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  restricted_by_user User @relation("restricted_by", fields: [restricted_by], references: [user_id])
+
+  @@unique([user_id, permission_name, is_active])
+  @@index([user_id])
+  @@index([permission_name])
+  @@index([restriction_type])
+  @@map("user_permission_restrictions")
+  @@schema("roles")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum BusinessAccessType {
+  CREATOR
+  PARTNER
+  VENDOR
+  CLIENT
+  INVESTOR
+
+  @@schema("profiles")
+}
+
+enum VerificationPurpose {
+  EMAIL_VERIFICATION
+  PHONE_VERIFICATION
+  PASSWORD_RESET
+  TWO_FACTOR_AUTH
+
+  @@schema("profiles")
+}
+
+enum AccountType {
+  ORGANIZATION
+  INDIVIDUAL
+
+  @@schema("profiles")
+}
