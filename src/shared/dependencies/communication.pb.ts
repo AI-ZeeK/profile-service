@@ -12,6 +12,12 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "communication";
 
+export enum SendOtpType {
+  REGISTRATION = 0,
+  SIGNIN = 1,
+  UNRECOGNIZED = -1,
+}
+
 export enum ChatType {
   CHAT_TYPE_DIRECT = 0,
   CHAT_TYPE_GROUP = 1,
@@ -45,6 +51,21 @@ export enum MessageStatus {
   MESSAGE_STATUS_READ = 3,
   MESSAGE_STATUS_FAILED = 4,
   UNRECOGNIZED = -1,
+}
+
+export interface SendOtpMailRequest {
+  email: string;
+  name: string;
+  otp: string;
+  type: SendOtpType;
+}
+
+export interface ClearUserPushSubscriptionsRequest {
+  user_id: string;
+}
+
+export interface ClearUserPushSubscriptionsResponse {
+  success: boolean;
 }
 
 export interface CreateChatRequest {
@@ -165,6 +186,11 @@ export interface DeleteChatResponse {
   chat_id: string;
 }
 
+export interface SendOtpMailResponse {
+  success: boolean;
+  error?: string | undefined;
+}
+
 export interface MessageResponse {
   success: boolean;
   error?: string | undefined;
@@ -277,6 +303,150 @@ export interface UnreadCount {
 }
 
 export const COMMUNICATION_PACKAGE_NAME = "communication";
+
+function createBaseSendOtpMailRequest(): SendOtpMailRequest {
+  return { email: "", name: "", otp: "", type: 0 };
+}
+
+export const SendOtpMailRequest: MessageFns<SendOtpMailRequest> = {
+  encode(message: SendOtpMailRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.email !== "") {
+      writer.uint32(10).string(message.email);
+    }
+    if (message.name !== "") {
+      writer.uint32(18).string(message.name);
+    }
+    if (message.otp !== "") {
+      writer.uint32(26).string(message.otp);
+    }
+    if (message.type !== 0) {
+      writer.uint32(32).int32(message.type);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SendOtpMailRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSendOtpMailRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.otp = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.type = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseClearUserPushSubscriptionsRequest(): ClearUserPushSubscriptionsRequest {
+  return { user_id: "" };
+}
+
+export const ClearUserPushSubscriptionsRequest: MessageFns<ClearUserPushSubscriptionsRequest> = {
+  encode(message: ClearUserPushSubscriptionsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.user_id !== "") {
+      writer.uint32(10).string(message.user_id);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ClearUserPushSubscriptionsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseClearUserPushSubscriptionsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.user_id = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseClearUserPushSubscriptionsResponse(): ClearUserPushSubscriptionsResponse {
+  return { success: false };
+}
+
+export const ClearUserPushSubscriptionsResponse: MessageFns<ClearUserPushSubscriptionsResponse> = {
+  encode(message: ClearUserPushSubscriptionsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.success !== false) {
+      writer.uint32(8).bool(message.success);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ClearUserPushSubscriptionsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseClearUserPushSubscriptionsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.success = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
 
 function createBaseCreateChatRequest(): CreateChatRequest {
   return { name: "", chat_type: 0, creator_id: "", participant_ids: [] };
@@ -1438,6 +1608,54 @@ export const DeleteChatResponse: MessageFns<DeleteChatResponse> = {
           }
 
           message.chat_id = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseSendOtpMailResponse(): SendOtpMailResponse {
+  return { success: false };
+}
+
+export const SendOtpMailResponse: MessageFns<SendOtpMailResponse> = {
+  encode(message: SendOtpMailResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.success !== false) {
+      writer.uint32(8).bool(message.success);
+    }
+    if (message.error !== undefined) {
+      writer.uint32(18).string(message.error);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SendOtpMailResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSendOtpMailResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.success = reader.bool();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.error = reader.string();
           continue;
         }
       }
@@ -2642,6 +2860,16 @@ export interface CommunicationServiceClient {
   /** Real-time subscriptions (for WebSocket events) */
 
   getChatEvents(request: ChatEventsRequest): Observable<ChatEventResponse>;
+
+  /** Mail Management */
+
+  sendOtpMail(request: SendOtpMailRequest): Observable<SendOtpMailResponse>;
+
+  /** Push Notifications */
+
+  clearUserPushSubscriptions(
+    request: ClearUserPushSubscriptionsRequest,
+  ): Observable<ClearUserPushSubscriptionsResponse>;
 }
 
 /** 💬 Communication Service - handles chats, messages, and real-time communication */
@@ -2706,6 +2934,21 @@ export interface CommunicationServiceController {
   /** Real-time subscriptions (for WebSocket events) */
 
   getChatEvents(request: ChatEventsRequest): Observable<ChatEventResponse>;
+
+  /** Mail Management */
+
+  sendOtpMail(
+    request: SendOtpMailRequest,
+  ): Promise<SendOtpMailResponse> | Observable<SendOtpMailResponse> | SendOtpMailResponse;
+
+  /** Push Notifications */
+
+  clearUserPushSubscriptions(
+    request: ClearUserPushSubscriptionsRequest,
+  ):
+    | Promise<ClearUserPushSubscriptionsResponse>
+    | Observable<ClearUserPushSubscriptionsResponse>
+    | ClearUserPushSubscriptionsResponse;
 }
 
 export function CommunicationServiceControllerMethods() {
@@ -2726,6 +2969,8 @@ export function CommunicationServiceControllerMethods() {
       "markMessagesAsRead",
       "getUnreadCounts",
       "getChatEvents",
+      "sendOtpMail",
+      "clearUserPushSubscriptions",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
@@ -2892,6 +3137,30 @@ export const CommunicationServiceService = {
     responseSerialize: (value: ChatEventResponse): Buffer => Buffer.from(ChatEventResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): ChatEventResponse => ChatEventResponse.decode(value),
   },
+  /** Mail Management */
+  sendOtpMail: {
+    path: "/communication.CommunicationService/SendOtpMail",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: SendOtpMailRequest): Buffer => Buffer.from(SendOtpMailRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): SendOtpMailRequest => SendOtpMailRequest.decode(value),
+    responseSerialize: (value: SendOtpMailResponse): Buffer => Buffer.from(SendOtpMailResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): SendOtpMailResponse => SendOtpMailResponse.decode(value),
+  },
+  /** Push Notifications */
+  clearUserPushSubscriptions: {
+    path: "/communication.CommunicationService/ClearUserPushSubscriptions",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: ClearUserPushSubscriptionsRequest): Buffer =>
+      Buffer.from(ClearUserPushSubscriptionsRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): ClearUserPushSubscriptionsRequest =>
+      ClearUserPushSubscriptionsRequest.decode(value),
+    responseSerialize: (value: ClearUserPushSubscriptionsResponse): Buffer =>
+      Buffer.from(ClearUserPushSubscriptionsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): ClearUserPushSubscriptionsResponse =>
+      ClearUserPushSubscriptionsResponse.decode(value),
+  },
 } as const;
 
 export interface CommunicationServiceServer extends UntypedServiceImplementation {
@@ -2915,6 +3184,10 @@ export interface CommunicationServiceServer extends UntypedServiceImplementation
   getUnreadCounts: handleUnaryCall<GetUnreadCountsRequest, GetUnreadCountsResponse>;
   /** Real-time subscriptions (for WebSocket events) */
   getChatEvents: handleServerStreamingCall<ChatEventsRequest, ChatEventResponse>;
+  /** Mail Management */
+  sendOtpMail: handleUnaryCall<SendOtpMailRequest, SendOtpMailResponse>;
+  /** Push Notifications */
+  clearUserPushSubscriptions: handleUnaryCall<ClearUserPushSubscriptionsRequest, ClearUserPushSubscriptionsResponse>;
 }
 
 function longToNumber(int64: { toString(): string }): number {

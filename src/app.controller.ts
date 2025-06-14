@@ -1,5 +1,5 @@
 import { Controller, Logger } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { UserService } from './user/user.service';
 import {
   GetUserByEmailRequest,
@@ -9,12 +9,16 @@ import {
   GetUserRequest,
   UpdateUserRequest,
 } from './shared/dependencies/profile.pb';
+import { BusinessUserService } from './user/business-user.service';
 
 @Controller()
 export class AppController {
   private readonly logger = new Logger(AppController.name);
 
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly businessUserService: BusinessUserService,
+  ) {}
 
   // 👤 User Management
 
@@ -160,6 +164,20 @@ export class AppController {
         success: false,
         error: error.message,
       };
+    }
+  }
+
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'GetBusinessUser')
+  async getBusinessUser(data: GetUserRequest) {
+    try {
+      this.logger.log(`gRPC: GetBusinessUser ${data.user_id}`);
+      const businessUser = await this.businessUserService.getBusinessUser(data);
+      return {
+        success: true,
+        business_user: businessUser,
+      };
+    } catch (error) {
+      throw new RpcException(error);
     }
   }
 

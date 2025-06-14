@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package organization;
+
+// 🏢 Organization Service - handles organization and branch management
+service OrganizationService {
+  // Organization Management
+  rpc CreateOrganization(CreateOrganizationRequest) returns (OrganizationResponse);
+  rpc GetOrganization(GetOrganizationRequest) returns (OrganizationResponse);
+
+
+  rpc validateCompanyReference(ValidateCompanyReferenceRequest) returns (ValidateCompanyReferenceResponse);
+
+
+
+}
+
+// 📝 REQUEST MESSAGES
+
+message ValidateCompanyReferenceRequest {
+  string company_ref = 1;
+}
+
+message ValidateCompanyReferenceResponse {
+  bool success = 1;
+  optional string error = 2;
+  string company_id = 3;
+}
+
+message CreateOrganizationRequest {
+  string creator_id = 1;
+  string organization_name = 2;
+  string phone_number = 3;
+  string email = 4;
+  string registration_number = 5;
+  string registration_date = 6;
+}
+
+message GetOrganizationRequest {
+  string organization_id = 1;
+}
+
+// 📤 RESPONSE MESSAGES
+
+message OrganizationResponse {
+  bool success = 1;
+  optional string error = 2;
+  Organization organization = 3;
+}
+
+
+// 🏗️ DATA MODELS
+
+message Organization {
+  string organization_id = 1;
+  string name = 2;
+  string phone_number = 3;
+  string email = 4;
+  string registration_number = 5;
+  string registration_date = 6;
+  string creator_id = 7;
+  string created_at = 8;
+  string updated_at = 9;
+  optional string deleted_at = 10;
+}

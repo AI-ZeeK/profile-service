@@ -12,6 +12,83 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "profile";
 
+export enum SendOtpType {
+  REGISTRATION = 0,
+  SIGNIN = 1,
+  UNRECOGNIZED = -1,
+}
+
+export interface EmptyRequest {
+}
+
+export interface Role {
+  role_id: string;
+  role_name: string;
+  is_active: boolean;
+}
+
+export interface GetRolesResponse {
+  roles: Role[];
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface SendOtpRequest {
+  token: string;
+  type: SendOtpType;
+}
+
+export interface VerifyOtpRequest {
+  token: string;
+  otp: string;
+  type: SendOtpType;
+}
+
+export interface SendOtpResponse {
+  success: boolean;
+  error?: string | undefined;
+  message?: string | undefined;
+}
+
+export interface RefreshTokenResponse {
+  success: boolean;
+  user?: User | undefined;
+  access_token: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  error?: string | undefined;
+  user?: User | undefined;
+  access_token: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  role_name: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  organization_name: string;
+  company_ref: string;
+  organization_phone_number: string;
+  organization_email: string;
+  organization_registration_number: string;
+  organization_registration_date: string;
+}
+
+export interface LogoutRequest {
+  user_id: string;
+}
+
+export interface RefreshTokenRequest {
+  user_id: string;
+}
+
 export interface GetUserRequest {
   user_id: string;
 }
@@ -142,6 +219,716 @@ export interface BusinessUser {
 }
 
 export const PROFILE_PACKAGE_NAME = "profile";
+
+function createBaseEmptyRequest(): EmptyRequest {
+  return {};
+}
+
+export const EmptyRequest: MessageFns<EmptyRequest> = {
+  encode(_: EmptyRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EmptyRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEmptyRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseRole(): Role {
+  return { role_id: "", role_name: "", is_active: false };
+}
+
+export const Role: MessageFns<Role> = {
+  encode(message: Role, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.role_id !== "") {
+      writer.uint32(10).string(message.role_id);
+    }
+    if (message.role_name !== "") {
+      writer.uint32(18).string(message.role_name);
+    }
+    if (message.is_active !== false) {
+      writer.uint32(24).bool(message.is_active);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Role {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRole();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.role_id = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.role_name = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.is_active = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseGetRolesResponse(): GetRolesResponse {
+  return { roles: [] };
+}
+
+export const GetRolesResponse: MessageFns<GetRolesResponse> = {
+  encode(message: GetRolesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.roles) {
+      Role.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetRolesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRolesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.roles.push(Role.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseLoginRequest(): LoginRequest {
+  return { email: "", password: "" };
+}
+
+export const LoginRequest: MessageFns<LoginRequest> = {
+  encode(message: LoginRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.email !== "") {
+      writer.uint32(10).string(message.email);
+    }
+    if (message.password !== "") {
+      writer.uint32(18).string(message.password);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): LoginRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseLoginRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.password = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseSendOtpRequest(): SendOtpRequest {
+  return { token: "", type: 0 };
+}
+
+export const SendOtpRequest: MessageFns<SendOtpRequest> = {
+  encode(message: SendOtpRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.type !== 0) {
+      writer.uint32(16).int32(message.type);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SendOtpRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSendOtpRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.type = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseVerifyOtpRequest(): VerifyOtpRequest {
+  return { token: "", otp: "", type: 0 };
+}
+
+export const VerifyOtpRequest: MessageFns<VerifyOtpRequest> = {
+  encode(message: VerifyOtpRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.otp !== "") {
+      writer.uint32(18).string(message.otp);
+    }
+    if (message.type !== 0) {
+      writer.uint32(24).int32(message.type);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): VerifyOtpRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseVerifyOtpRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.otp = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.type = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseSendOtpResponse(): SendOtpResponse {
+  return { success: false };
+}
+
+export const SendOtpResponse: MessageFns<SendOtpResponse> = {
+  encode(message: SendOtpResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.success !== false) {
+      writer.uint32(8).bool(message.success);
+    }
+    if (message.error !== undefined) {
+      writer.uint32(18).string(message.error);
+    }
+    if (message.message !== undefined) {
+      writer.uint32(26).string(message.message);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SendOtpResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSendOtpResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.success = reader.bool();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.error = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseRefreshTokenResponse(): RefreshTokenResponse {
+  return { success: false, access_token: "" };
+}
+
+export const RefreshTokenResponse: MessageFns<RefreshTokenResponse> = {
+  encode(message: RefreshTokenResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.success !== false) {
+      writer.uint32(8).bool(message.success);
+    }
+    if (message.user !== undefined) {
+      User.encode(message.user, writer.uint32(18).fork()).join();
+    }
+    if (message.access_token !== "") {
+      writer.uint32(26).string(message.access_token);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RefreshTokenResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRefreshTokenResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.success = reader.bool();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.user = User.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.access_token = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseAuthResponse(): AuthResponse {
+  return { success: false, access_token: "" };
+}
+
+export const AuthResponse: MessageFns<AuthResponse> = {
+  encode(message: AuthResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.success !== false) {
+      writer.uint32(8).bool(message.success);
+    }
+    if (message.error !== undefined) {
+      writer.uint32(18).string(message.error);
+    }
+    if (message.user !== undefined) {
+      User.encode(message.user, writer.uint32(26).fork()).join();
+    }
+    if (message.access_token !== "") {
+      writer.uint32(34).string(message.access_token);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AuthResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAuthResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.success = reader.bool();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.error = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.user = User.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.access_token = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseRegisterRequest(): RegisterRequest {
+  return {
+    email: "",
+    role_name: "",
+    password: "",
+    first_name: "",
+    last_name: "",
+    phone_number: "",
+    organization_name: "",
+    company_ref: "",
+    organization_phone_number: "",
+    organization_email: "",
+    organization_registration_number: "",
+    organization_registration_date: "",
+  };
+}
+
+export const RegisterRequest: MessageFns<RegisterRequest> = {
+  encode(message: RegisterRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.email !== "") {
+      writer.uint32(10).string(message.email);
+    }
+    if (message.role_name !== "") {
+      writer.uint32(18).string(message.role_name);
+    }
+    if (message.password !== "") {
+      writer.uint32(26).string(message.password);
+    }
+    if (message.first_name !== "") {
+      writer.uint32(34).string(message.first_name);
+    }
+    if (message.last_name !== "") {
+      writer.uint32(42).string(message.last_name);
+    }
+    if (message.phone_number !== "") {
+      writer.uint32(50).string(message.phone_number);
+    }
+    if (message.organization_name !== "") {
+      writer.uint32(58).string(message.organization_name);
+    }
+    if (message.company_ref !== "") {
+      writer.uint32(66).string(message.company_ref);
+    }
+    if (message.organization_phone_number !== "") {
+      writer.uint32(74).string(message.organization_phone_number);
+    }
+    if (message.organization_email !== "") {
+      writer.uint32(82).string(message.organization_email);
+    }
+    if (message.organization_registration_number !== "") {
+      writer.uint32(90).string(message.organization_registration_number);
+    }
+    if (message.organization_registration_date !== "") {
+      writer.uint32(98).string(message.organization_registration_date);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RegisterRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRegisterRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.role_name = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.password = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.first_name = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.last_name = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.phone_number = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.organization_name = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.company_ref = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.organization_phone_number = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.organization_email = reader.string();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.organization_registration_number = reader.string();
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.organization_registration_date = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseLogoutRequest(): LogoutRequest {
+  return { user_id: "" };
+}
+
+export const LogoutRequest: MessageFns<LogoutRequest> = {
+  encode(message: LogoutRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.user_id !== "") {
+      writer.uint32(10).string(message.user_id);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): LogoutRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseLogoutRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.user_id = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseRefreshTokenRequest(): RefreshTokenRequest {
+  return { user_id: "" };
+}
+
+export const RefreshTokenRequest: MessageFns<RefreshTokenRequest> = {
+  encode(message: RefreshTokenRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.user_id !== "") {
+      writer.uint32(10).string(message.user_id);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RefreshTokenRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRefreshTokenRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.user_id = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
 
 function createBaseGetUserRequest(): GetUserRequest {
   return { user_id: "" };
@@ -1464,6 +2251,20 @@ export interface ProfileServiceClient {
   getUserContacts(request: GetUserContactsRequest): Observable<GetUserContactsResponse>;
 
   updateUser(request: UpdateUserRequest): Observable<UpdateUserResponse>;
+
+  login(request: LoginRequest): Observable<AuthResponse>;
+
+  register(request: RegisterRequest): Observable<AuthResponse>;
+
+  sendOtp(request: SendOtpRequest): Observable<SendOtpResponse>;
+
+  verifyOtp(request: VerifyOtpRequest): Observable<SendOtpResponse>;
+
+  logout(request: LogoutRequest): Observable<SendOtpResponse>;
+
+  refreshToken(request: RefreshTokenRequest): Observable<RefreshTokenResponse>;
+
+  getRoles(request: EmptyRequest): Observable<GetRolesResponse>;
 }
 
 /** 👤 Profile Service - handles user profiles and user management */
@@ -1488,11 +2289,40 @@ export interface ProfileServiceController {
   updateUser(
     request: UpdateUserRequest,
   ): Promise<UpdateUserResponse> | Observable<UpdateUserResponse> | UpdateUserResponse;
+
+  login(request: LoginRequest): Promise<AuthResponse> | Observable<AuthResponse> | AuthResponse;
+
+  register(request: RegisterRequest): Promise<AuthResponse> | Observable<AuthResponse> | AuthResponse;
+
+  sendOtp(request: SendOtpRequest): Promise<SendOtpResponse> | Observable<SendOtpResponse> | SendOtpResponse;
+
+  verifyOtp(request: VerifyOtpRequest): Promise<SendOtpResponse> | Observable<SendOtpResponse> | SendOtpResponse;
+
+  logout(request: LogoutRequest): Promise<SendOtpResponse> | Observable<SendOtpResponse> | SendOtpResponse;
+
+  refreshToken(
+    request: RefreshTokenRequest,
+  ): Promise<RefreshTokenResponse> | Observable<RefreshTokenResponse> | RefreshTokenResponse;
+
+  getRoles(request: EmptyRequest): Promise<GetRolesResponse> | Observable<GetRolesResponse> | GetRolesResponse;
 }
 
 export function ProfileServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["getUser", "getUserByEmail", "updateUserStatus", "getUserContacts", "updateUser"];
+    const grpcMethods: string[] = [
+      "getUser",
+      "getUserByEmail",
+      "updateUserStatus",
+      "getUserContacts",
+      "updateUser",
+      "login",
+      "register",
+      "sendOtp",
+      "verifyOtp",
+      "logout",
+      "refreshToken",
+      "getRoles",
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("ProfileService", method)(constructor.prototype[method], method, descriptor);
@@ -1562,6 +2392,70 @@ export const ProfileServiceService = {
     responseSerialize: (value: UpdateUserResponse): Buffer => Buffer.from(UpdateUserResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): UpdateUserResponse => UpdateUserResponse.decode(value),
   },
+  login: {
+    path: "/profile.ProfileService/login",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: LoginRequest): Buffer => Buffer.from(LoginRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): LoginRequest => LoginRequest.decode(value),
+    responseSerialize: (value: AuthResponse): Buffer => Buffer.from(AuthResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): AuthResponse => AuthResponse.decode(value),
+  },
+  register: {
+    path: "/profile.ProfileService/register",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: RegisterRequest): Buffer => Buffer.from(RegisterRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): RegisterRequest => RegisterRequest.decode(value),
+    responseSerialize: (value: AuthResponse): Buffer => Buffer.from(AuthResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): AuthResponse => AuthResponse.decode(value),
+  },
+  sendOtp: {
+    path: "/profile.ProfileService/sendOtp",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: SendOtpRequest): Buffer => Buffer.from(SendOtpRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): SendOtpRequest => SendOtpRequest.decode(value),
+    responseSerialize: (value: SendOtpResponse): Buffer => Buffer.from(SendOtpResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): SendOtpResponse => SendOtpResponse.decode(value),
+  },
+  verifyOtp: {
+    path: "/profile.ProfileService/verifyOtp",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: VerifyOtpRequest): Buffer => Buffer.from(VerifyOtpRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): VerifyOtpRequest => VerifyOtpRequest.decode(value),
+    responseSerialize: (value: SendOtpResponse): Buffer => Buffer.from(SendOtpResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): SendOtpResponse => SendOtpResponse.decode(value),
+  },
+  logout: {
+    path: "/profile.ProfileService/logout",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: LogoutRequest): Buffer => Buffer.from(LogoutRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): LogoutRequest => LogoutRequest.decode(value),
+    responseSerialize: (value: SendOtpResponse): Buffer => Buffer.from(SendOtpResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): SendOtpResponse => SendOtpResponse.decode(value),
+  },
+  refreshToken: {
+    path: "/profile.ProfileService/refreshToken",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: RefreshTokenRequest): Buffer => Buffer.from(RefreshTokenRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): RefreshTokenRequest => RefreshTokenRequest.decode(value),
+    responseSerialize: (value: RefreshTokenResponse): Buffer =>
+      Buffer.from(RefreshTokenResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): RefreshTokenResponse => RefreshTokenResponse.decode(value),
+  },
+  getRoles: {
+    path: "/profile.ProfileService/getRoles",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: EmptyRequest): Buffer => Buffer.from(EmptyRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): EmptyRequest => EmptyRequest.decode(value),
+    responseSerialize: (value: GetRolesResponse): Buffer => Buffer.from(GetRolesResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetRolesResponse => GetRolesResponse.decode(value),
+  },
 } as const;
 
 export interface ProfileServiceServer extends UntypedServiceImplementation {
@@ -1571,6 +2465,13 @@ export interface ProfileServiceServer extends UntypedServiceImplementation {
   updateUserStatus: handleUnaryCall<UpdateUserStatusRequest, UpdateUserStatusResponse>;
   getUserContacts: handleUnaryCall<GetUserContactsRequest, GetUserContactsResponse>;
   updateUser: handleUnaryCall<UpdateUserRequest, UpdateUserResponse>;
+  login: handleUnaryCall<LoginRequest, AuthResponse>;
+  register: handleUnaryCall<RegisterRequest, AuthResponse>;
+  sendOtp: handleUnaryCall<SendOtpRequest, SendOtpResponse>;
+  verifyOtp: handleUnaryCall<VerifyOtpRequest, SendOtpResponse>;
+  logout: handleUnaryCall<LogoutRequest, SendOtpResponse>;
+  refreshToken: handleUnaryCall<RefreshTokenRequest, RefreshTokenResponse>;
+  getRoles: handleUnaryCall<EmptyRequest, GetRolesResponse>;
 }
 
 export interface MessageFns<T> {

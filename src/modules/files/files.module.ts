@@ -2,7 +2,11 @@ import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { FilesService } from './files.service';
-import { FILES_PACKAGE_NAME } from 'src/shared/dependencies/files.pb';
+import {
+  FILES_PACKAGE_NAME,
+  protobufPackage,
+} from 'src/shared/dependencies/files.pb';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [

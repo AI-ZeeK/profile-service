@@ -10,9 +10,91 @@ service ProfileService {
   rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
   rpc GetUserContacts(GetUserContactsRequest) returns (GetUserContactsResponse);
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+
+  rpc login(LoginRequest) returns (AuthResponse);
+  rpc register(RegisterRequest) returns (AuthResponse);
+  rpc sendOtp(SendOtpRequest) returns (SendOtpResponse);
+  rpc verifyOtp(VerifyOtpRequest) returns (SendOtpResponse);
+  rpc logout(LogoutRequest) returns (SendOtpResponse);
+  rpc refreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+
+  rpc getRoles(EmptyRequest) returns (GetRolesResponse);
 }
 
 // 📝 REQUEST MESSAGES
+
+message EmptyRequest {}
+
+message Role {
+  string role_id = 1;
+  string role_name = 2;
+  bool is_active = 3;
+}
+
+message GetRolesResponse {
+  repeated Role roles = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message SendOtpRequest {
+  string token = 1;
+  SendOtpType type = 2;
+}
+
+message VerifyOtpRequest {
+  string token = 1;
+  string otp = 2;
+  SendOtpType type = 3;
+}
+
+message SendOtpResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional string message = 3;
+}
+
+message RefreshTokenResponse {
+  bool success = 1;
+  User user = 2;
+  string access_token = 3;
+}
+
+
+
+message AuthResponse {
+  bool success = 1;
+  optional string error = 2;
+  User user = 3;
+  string access_token = 4;
+}
+
+message RegisterRequest {
+  string email = 1;
+  string role_name = 2;
+  string password = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string phone_number = 6;
+  string organization_name = 7;
+  string company_ref = 8;
+  string organization_phone_number = 9;
+  string organization_email = 10;
+  string organization_registration_number = 11;
+  string organization_registration_date = 12;
+}
+
+message LogoutRequest {
+  string user_id = 1;
+}
+
+message RefreshTokenRequest {
+  string user_id = 1;
+}
+
 
 message GetUserRequest {
   string user_id = 1;
@@ -146,3 +228,8 @@ message BusinessUser {
   string business_name = 2;
   bool is_active = 3;
 } 
+
+enum SendOtpType {
+  REGISTRATION = 0;
+  SIGNIN = 1;
+}

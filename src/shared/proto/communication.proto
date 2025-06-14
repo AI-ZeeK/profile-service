@@ -28,9 +28,36 @@ service CommunicationService {
   
   // Real-time subscriptions (for WebSocket events)
   rpc GetChatEvents(ChatEventsRequest) returns (stream ChatEventResponse);
+  
+  // Mail Management
+  rpc SendOtpMail(SendOtpMailRequest) returns (SendOtpMailResponse);
+
+  // Push Notifications
+  rpc ClearUserPushSubscriptions(ClearUserPushSubscriptionsRequest) returns (ClearUserPushSubscriptionsResponse);
+
 }
 
 // 📝 REQUEST MESSAGES
+
+message SendOtpMailRequest {
+  string email = 1;
+  string name = 2;
+  string otp = 3;
+  SendOtpType type = 4;
+}
+enum SendOtpType {
+  REGISTRATION = 0;
+  SIGNIN = 1;
+}
+
+
+message ClearUserPushSubscriptionsRequest {
+  string user_id = 1;
+}
+
+message ClearUserPushSubscriptionsResponse {
+  bool success = 1;
+}
 
 message CreateChatRequest {
   string name = 1;
@@ -150,6 +177,11 @@ message DeleteChatResponse {
   bool success = 1;
   optional string error = 2;
   string chat_id = 3;
+}
+
+message SendOtpMailResponse {
+  bool success = 1;
+  optional string error = 2;
 }
 
 message MessageResponse {
