@@ -27,11 +27,11 @@ export class CommunicationService {
   }
 
   async clearUserPushSubscriptions({
-    user_id,
+    userId,
   }: ClearUserPushSubscriptionsRequest) {
     return await firstValueFrom(
       this.communicationService.clearUserPushSubscriptions({
-        user_id,
+        userId,
       }),
     );
   }

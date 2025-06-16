@@ -18,12 +18,6 @@ async function bootstrap() {
         package: PROFILE_PACKAGE_NAME,
         protoPath: join(process.cwd(), 'src/shared/proto/profile.proto'),
         url: `${process.env.GRPC_HOST}:${process.env.PROFILE_SERVICE_PORT}`,
-        keepalive: {
-          keepaliveTimeMs: 5000,
-          keepalivePermitWithoutCalls: 0,
-        },
-        maxReceiveMessageLength: 4 * 1024 * 1024, // 4MB
-        maxSendMessageLength: 4 * 1024 * 1024, // 4MB
       },
     },
   );

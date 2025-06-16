@@ -1,29 +1,50 @@
 syntax = "proto3";
 
+import "google/protobuf/struct.proto";
+
 package profile;
+
 
 // 👤 Profile Service - handles user profiles and user management
 service ProfileService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (AuthResponse);
+  rpc SendOtp(SendOtpRequest) returns (SendOtpResponse);
+  rpc VerifyOtp(VerifyOtpRequest) returns (SendOtpResponse);
+  rpc Logout(LogoutRequest) returns (SendOtpResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+
+  rpc GetRoles(EmptyRequest) returns (GetRolesResponse);
+  
   // User Management
   rpc GetUser(GetUserRequest) returns (UserResponse);
+  rpc GetBusinessUser(GetUserRequest) returns (BusinessUserResponse);
   rpc GetUserByEmail(GetUserByEmailRequest) returns (GetUserByEmailResponse);
   rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
   rpc GetUserContacts(GetUserContactsRequest) returns (GetUserContactsResponse);
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
 
-  rpc login(LoginRequest) returns (AuthResponse);
-  rpc register(RegisterRequest) returns (AuthResponse);
-  rpc sendOtp(SendOtpRequest) returns (SendOtpResponse);
-  rpc verifyOtp(VerifyOtpRequest) returns (SendOtpResponse);
-  rpc logout(LogoutRequest) returns (SendOtpResponse);
-  rpc refreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
-
-  rpc getRoles(EmptyRequest) returns (GetRolesResponse);
 }
+
+message CommonResponseArray {
+  bool success = 1;
+  string message = 2;
+  int32 status = 3;
+  repeated google.protobuf.Struct data = 4;
+  repeated Role roles = 5;
+}
+
 
 // 📝 REQUEST MESSAGES
 
 message EmptyRequest {}
+
+message RegisterResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional string message = 3;
+  optional string auth_token = 4;
+}
 
 message Role {
   string role_id = 1;
@@ -74,17 +95,17 @@ message AuthResponse {
 
 message RegisterRequest {
   string email = 1;
-  string role_name = 2;
-  string password = 3;
-  string first_name = 4;
-  string last_name = 5;
-  string phone_number = 6;
-  string organization_name = 7;
-  string company_ref = 8;
-  string organization_phone_number = 9;
-  string organization_email = 10;
-  string organization_registration_number = 11;
-  string organization_registration_date = 12;
+  string password = 2;
+  string phone_number = 3;
+  string company_ref = 4;
+  string role_name = 5;
+}
+
+
+enum ROLES_ENUM {
+  CLIENT = 0;
+  BUSINESS_USER = 1;
+  STAFF = 2;
 }
 
 message LogoutRequest {
@@ -94,6 +115,7 @@ message LogoutRequest {
 message RefreshTokenRequest {
   string user_id = 1;
 }
+
 
 
 message GetUserRequest {
@@ -125,6 +147,24 @@ message UpdateUserRequest {
 }
 
 // 📤 RESPONSE MESSAGES
+
+message BusinessUser {
+  string business_user_id = 1;
+  string user_id = 2;
+  string email = 3;
+  string phone_number = 4;
+  string organization_id = 5;
+  string access_type = 6;
+  int32 access_level = 7;
+  bool is_active = 8;
+  optional string notes = 9;
+}
+
+message BusinessUserResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional BusinessUser business_user = 3;
+}
 
 message UserResponse {
   bool success = 1;
@@ -223,11 +263,7 @@ message UserRole {
   bool is_active = 3;
 }
 
-message BusinessUser {
-  string business_user_id = 1;
-  string business_name = 2;
-  bool is_active = 3;
-} 
+
 
 enum SendOtpType {
   REGISTRATION = 0;

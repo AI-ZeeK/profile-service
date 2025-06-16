@@ -27,7 +27,7 @@ export class BusinessUserService {
     try {
       const businessUser = await this.prisma.businessUser.findFirst({
         where: {
-          user_id: payload.user_id,
+          user_id: payload.userId,
         },
         include: {
           user: true,

@@ -50,13 +50,13 @@ export class UserService {
       }
 
       const address = await this.addressService.verifyAddress({
-        entity_type: ADDRESS_TYPE_ENUM.USER_HOME,
-        entity_id: userData.user_id,
+        entityType: ADDRESS_TYPE_ENUM.USER_HOME,
+        entityId: userData.user_id,
       });
 
       const avatarFile = await this.filesService.verifyFile({
-        entity_type: FILE_ENTITY_TYPE_ENUM.USER_AVATAR,
-        entity_id: userData.user_id,
+        entityType: FILE_ENTITY_TYPE_ENUM.USER_AVATAR,
+        entityId: userData.user_id,
       });
 
       const user_role = userData.user_roles.find((role) => role.is_active);
@@ -68,7 +68,7 @@ export class UserService {
       return {
         ...userData,
         address,
-        avatar_url: avatarFile?.file_url || null,
+        avatar_url: avatarFile?.fileUrl || null,
         user_role: user_role,
         business_user: business_user,
       };
@@ -154,18 +154,18 @@ export class UserService {
           this.logger.log(`Updating address for user: ${user.user_id}`);
 
           await this.addressService.createOrUpdateAddress({
-            entity_type: ADDRESS_TYPE_ENUM.USER_HOME,
-            entity_id: user.user_id,
+            entityType: ADDRESS_TYPE_ENUM.USER_HOME,
+            entityId: user.user_id,
             street: data.address.street || '',
             building: data.address.building || '',
             apartment: data.address.apartment || '',
             district: data.address.district || '',
             city: data.address.city || '',
             state: data.address.state || '',
-            postal_code: data.address.postal_code || '',
+            postalCode: data.address.postal_code || '',
             country: data.address.country || '',
             landmark: data.address.landmark || '',
-            direction_url: data.address.direction_url || '',
+            directionUrl: data.address.direction_url || '',
             latitude: data.address.latitude || 0,
             longitude: data.address.longitude || 0,
           });
@@ -189,9 +189,9 @@ export class UserService {
           this.logger.log(`Updating avatar for user: ${user.user_id}`);
 
           await this.filesService.createOrUpdateFile({
-            entity_type: FILE_ENTITY_TYPE_ENUM.USER_AVATAR,
-            entity_id: user.user_id,
-            file_url: data.avatar_url,
+            entityType: FILE_ENTITY_TYPE_ENUM.USER_AVATAR,
+            entityId: user.user_id,
+            fileUrl: data.avatar_url,
           });
 
           results.avatar.success = true;

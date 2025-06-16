@@ -16,9 +16,11 @@ import { OrganizationsService } from 'src/modules/organizations/organizations.se
 import { ROLES_ENUM } from 'prisma/enum';
 import { VerificationPurpose } from '@prisma/client';
 import {
+  RegisterRequest,
   SendOtpRequest,
   SendOtpType,
 } from 'src/shared/dependencies/profile.pb';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class AuthService {
@@ -115,14 +117,22 @@ export class AuthService {
         },
       });
 
-      if (user) throw new BadGatewayException('User Exists, Proceed to login');
+      if (user)
+        throw new RpcException({
+          code: 400,
+          message: 'User Exists, Proceed to login',
+        });
       const role = await this.prisma.role.findUnique({
         where: {
           role_name,
         },
       });
 
-      if (!role) throw new NotFoundException('role type unavailable');
+      if (!role)
+        throw new RpcException({
+          code: 404,
+          message: 'role type unavailable',
+        });
 
       user = await this.prisma.user.create({
         data: {
@@ -137,126 +147,159 @@ export class AuthService {
 
       return this.generateAuthToken({ user_id: user.user_id });
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
     }
   }
   async register({
     email,
-    role_name,
     password,
-    organization_name,
-    company_ref,
-    phone_number,
-    organization_email,
-    organization_phone_number,
-    organization_registration_number,
-    organization_registration_date,
-  }: {
-    email: string;
-    password: string;
-    role_name: string;
-    organization_name: string;
-    company_ref: string;
-    phone_number: string;
-    organization_email: string;
-    organization_phone_number: string;
-    organization_registration_number: string;
-    organization_registration_date: string;
-  }) {
+    companyRef,
+    phoneNumber,
+    roleName,
+  }: RegisterRequest) {
     try {
-      const { user } = await this.prisma.$transaction(async (prisma) => {
+      console.log(
+        'REGISTER REQUEST',
+        email,
+        password,
+        companyRef,
+        phoneNumber,
+        roleName,
+      );
+      let user = await this.prisma.user.findUnique({
+        where: {
+          email: email.toLowerCase(),
+        },
+      });
+
+      if (user)
+        throw new RpcException({
+          code: 400,
+          message: 'User Exists, Proceed to login',
+        });
+      const role = await this.prisma.role.findUnique({
+        where: {
+          role_name: roleName as unknown as string,
+        },
+      });
+
+      if (!role)
+        throw new RpcException({
+          code: 404,
+          message: 'role unavailable',
+        });
+      const saltRounds = 10; // Number of salt rounds (higher is more secure but slower)
+
+      const hashed_password = await bcrypt.hash(password, saltRounds);
+
+      user = await this.prisma.user.create({
+        data: {
+          email: email.toLowerCase(),
+          password: hashed_password, // Store the hashed password
+          phone_number: phoneNumber,
+          user_roles: {
+            create: {
+              role_name: role.role_name!,
+              is_active: true,
+            },
+          },
+        },
+      });
+
+      if (ROLES_ENUM.BUSINESS_USER === role.role_name) {
+        let organization;
         try {
-          let user = await prisma.user.findUnique({
-            where: {
-              email: email.toLowerCase(),
-            },
+          organization = await this.organizationService.createOrganization({
+            organizationName: '',
+            phoneNumber: '',
+            email: '',
+            registrationNumber: '',
+            registrationDate: '',
+            creatorId: user.user_id,
           });
-
-          if (user)
-            throw new BadGatewayException('User Exists, Proceed to login');
-          const role = await prisma.role.findUnique({
-            where: {
-              role_name,
-            },
-          });
-
-          if (!role) throw new NotFoundException('role unavailable');
-          const saltRounds = 10; // Number of salt rounds (higher is more secure but slower)
-
-          const hashed_password = await bcrypt.hash(password, saltRounds);
-
-          user = await prisma.user.create({
-            data: {
-              email: email.toLowerCase(),
-              password: hashed_password, // Store the hashed password
-              phone_number,
-              user_roles: {
-                create: {
-                  role_name: role.role_name!,
-                  is_active: true,
-                },
-              },
-            },
-          });
-
-          if (ROLES_ENUM.BUSINESS_USER === role.role_name) {
-            const organization =
-              await this.organizationService.createOrganization({
-                organization_name,
-                phone_number: organization_phone_number,
-                email: organization_email,
-                registration_number: organization_registration_number,
-                registration_date: organization_registration_date,
-                creator_id: user.user_id,
-              });
-            if (!organization.success)
-              throw new BadRequestException('organization not created');
-
-            await prisma.businessUser.create({
-              data: {
-                user_id: user.user_id,
-                organization_id:
-                  organization.organization?.organization_id || '',
-                // access_type: BusinessAccessType.CREATOR,
-                access_level: 1,
-                is_active: true,
-                email: user.email,
-              },
-            });
-          }
-          if (ROLES_ENUM.STAFF === role.role_name) {
-            const company =
-              await this.organizationService.validateCompanyReference({
-                company_ref,
-              });
-            if (!company.success)
-              throw new NotFoundException('company not found');
-            await prisma.staff.create({
-              data: {
-                company_id: company?.company_id || '',
-                user_id: user.user_id,
-              },
-            });
-          }
-
-          const _user = await prisma.user.findUnique({
+        } catch (error) {
+          console.log('ERROR', error);
+          await this.prisma.user.delete({
             where: {
               user_id: user.user_id,
             },
           });
-
-          return { user: _user };
-        } catch (error) {
-          throw new BadRequestException(error.message);
+          throw new RpcException({
+            code: 400,
+            message: error.message,
+          });
         }
+        console.log('ORGANIZATION', organization);
+        if (!organization?.success)
+          throw new RpcException({
+            code: 400,
+            message: 'organization not created',
+          });
+
+        await this.prisma.businessUser.create({
+          data: {
+            user_id: user.user_id,
+            organization_id: organization?.organizationId || '',
+            // access_type: BusinessAccessType.CREATOR,
+            access_level: 1,
+            is_active: true,
+            email: user.email,
+          },
+        });
+      }
+      if (ROLES_ENUM.STAFF === role.role_name) {
+        const company = await this.organizationService.validateCompanyReference(
+          {
+            companyRef: companyRef || '',
+          },
+        );
+        if (!company.success)
+          throw new RpcException({
+            code: 404,
+            message: 'company not found',
+          });
+        await this.prisma.staff.create({
+          data: {
+            company_id: company?.companyId || '',
+            user_id: user.user_id,
+          },
+        });
+      }
+
+      const otp = Helpers.generateOTP({
+        length: 6,
+        options: {
+          numbers: true,
+        },
       });
-      const { access_token } = await this.generateAccessToken({
+      await this.prisma.verification.create({
+        data: {
+          user_id: user.user_id,
+          otp_code: otp,
+          purpose: VerificationPurpose.EMAIL_VERIFICATION,
+          expires_at: Helpers.getFutureTimestamp({ seconds: 95 }),
+        },
+      });
+
+      await this.communicationService.sendOtp({
+        email: user?.email,
+        name: user?.email?.split('@')[0],
+        otp,
+        type: SendOtpType.REGISTRATION,
+      });
+
+      const { auth_token } = await this.generateAuthToken({
         user_id: user!.user_id,
       });
-
-      return { user, access_token };
+      return {
+        message: 'ACCOUNT CREATED SUCCESSFULLY, OTP SENT TO EMAIL',
+        auth_token,
+      };
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new RpcException(error);
     }
   }
 
@@ -286,7 +329,10 @@ export class AuthService {
         },
       });
       if (!user) {
-        throw new NotFoundException('User not found');
+        throw new RpcException({
+          code: 404,
+          message: 'User not found',
+        });
       }
 
       const isPasswordValid = await bcrypt.compare(
@@ -295,7 +341,10 @@ export class AuthService {
       );
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       if (!isPasswordValid) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new RpcException({
+          code: 401,
+          message: 'Invalid credentials',
+        });
       }
       const { access_token } = await this.generateAccessToken({
         user_id: user.user_id,
@@ -307,7 +356,10 @@ export class AuthService {
 
       return { user: _user, access_token };
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
     }
   }
 
@@ -318,7 +370,7 @@ export class AuthService {
         data: { refresh_token: '' },
       });
       await this.communicationService.clearUserPushSubscriptions({
-        user_id,
+        userId: user_id,
       });
       this.logger.log(
         `User ${user_id} logged out and push subscriptions cleared`,

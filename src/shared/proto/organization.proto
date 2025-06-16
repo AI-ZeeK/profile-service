@@ -46,6 +46,8 @@ message OrganizationResponse {
   bool success = 1;
   optional string error = 2;
   Organization organization = 3;
+  string organization_id = 4;
+  string message = 5;  
 }
 
 

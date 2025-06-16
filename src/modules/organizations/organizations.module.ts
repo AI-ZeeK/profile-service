@@ -13,7 +13,7 @@ import { join } from 'path';
         options: {
           package: ORGANIZATION_PACKAGE_NAME,
           protoPath: join(process.cwd(), 'src/shared/proto/organization.proto'),
-          url: `${process.env.GRPC_PORT}:${process.env.ORGANIZATION_SERVICE_PORT}`,
+          url: `${process.env.GRPC_HOST}:${process.env.ORGANIZATION_SERVICE_PORT}`,
         },
       },
     ]),

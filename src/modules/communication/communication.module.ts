@@ -16,7 +16,7 @@ import { COMMUNICATION_PACKAGE_NAME } from 'src/shared/dependencies/communicatio
             process.cwd(),
             'src/shared/proto/communication.proto',
           ),
-          url: `${process.env.GRPC_PORT}:${process.env.COMMUNICATION_SERVICE_PORT}`,
+          url: `${process.env.GRPC_HOST}:${process.env.COMMUNICATION_SERVICE_PORT}`,
         },
       },
     ]),
