@@ -149,7 +149,7 @@ message RetryProcessingRequest {
 message TempFileResponse {
   bool success = 1;
   optional string error = 2;
-  optional TempFile temp_file = 3;
+  optional string file_url = 3;
 }
 
 message GetTempFilesResponse {

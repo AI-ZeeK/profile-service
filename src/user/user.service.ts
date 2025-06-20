@@ -12,6 +12,11 @@ import { UpdateUserDto } from './dto/create-user.dto';
 import { FilesService } from 'src/modules/files/files.service';
 import { AddressService } from 'src/modules/address/address.service';
 import { Logger } from '@nestjs/common';
+import {
+  GetUserRequest,
+  UpdateUserRequest,
+} from 'src/shared/dependencies/profile.pb';
+import { RpcException } from '@nestjs/microservices';
 
 type UserWithAvatar<T = {}> = User & {
   avatar_url: string | null;
@@ -87,14 +92,14 @@ export class UserService {
 
       if (!user)
         return {
-          status: false,
+          success: false,
           message: 'User with email does not exist',
-          data: null,
+          user: null,
         };
       return {
-        status: true,
+        success: true,
         message: 'User with email exists',
-        data: user,
+        user: user,
       };
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -119,13 +124,7 @@ export class UserService {
     }
   }
 
-  async updateUser({
-    req_user,
-    data,
-  }: {
-    req_user: UserAuthorizedRequest;
-    data: UpdateUserDto;
-  }) {
+  async updateUser(data: UpdateUserRequest) {
     const results = {
       user: null as any,
       address: { success: false, error: null as string | null },
@@ -136,12 +135,12 @@ export class UserService {
     try {
       // Step 1: Update user basic info (Critical - if this fails, stop)
       const user = await this.prisma.user.update({
-        where: { user_id: req_user.user.user_id },
+        where: { user_id: data.userId },
         data: {
-          first_name: data.first_name,
-          last_name: data.last_name,
+          first_name: data.firstName,
+          last_name: data.lastName,
           email: data.email,
-          phone_number: data.phone_number,
+          phone_number: data.phoneNumber,
         },
       });
 
@@ -162,10 +161,10 @@ export class UserService {
             district: data.address.district || '',
             city: data.address.city || '',
             state: data.address.state || '',
-            postalCode: data.address.postal_code || '',
+            postalCode: data.address.postalCode || '',
             country: data.address.country || '',
             landmark: data.address.landmark || '',
-            directionUrl: data.address.direction_url || '',
+            directionUrl: data.address.directionUrl || '',
             latitude: data.address.latitude || 0,
             longitude: data.address.longitude || 0,
           });
@@ -184,14 +183,14 @@ export class UserService {
       }
 
       // Step 3: Handle avatar update (Non-critical - continue if fails)
-      if (data.avatar_url) {
+      if (data.avatarUrl) {
         try {
           this.logger.log(`Updating avatar for user: ${user.user_id}`);
 
           await this.filesService.createOrUpdateFile({
             entityType: FILE_ENTITY_TYPE_ENUM.USER_AVATAR,
             entityId: user.user_id,
-            fileUrl: data.avatar_url,
+            fileUrl: data.avatarUrl,
           });
 
           results.avatar.success = true;
@@ -216,13 +215,16 @@ export class UserService {
       });
 
       return {
-        ...user,
-        _service_results: results, // Include service results for debugging
+        success: true,
+        user: user,
       };
     } catch (error) {
       // Critical failure - user update failed
       this.logger.error(`Critical failure in user update: ${error.message}`);
-      throw new BadRequestException(`Failed to update user: ${error.message}`);
+      throw new RpcException({
+        code: 500,
+        message: `Failed to update user: ${error.message}`,
+      });
     }
   }
 
@@ -246,6 +248,26 @@ export class UserService {
       });
 
       return user;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async getUser(payload: GetUserRequest) {
+    try {
+      const user = await this.findOne({
+        user_id: payload.userId,
+      });
+      if (!user) {
+        throw new RpcException({
+          code: 404,
+          message: 'User not found',
+        });
+      }
+      return {
+        success: true,
+        user: user,
+      };
     } catch (error) {
       throw new BadRequestException(error.message);
     }

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ROLES_ENUM, toCamelCase } from '@djengo/proto-contracts';
+import { Helpers, ROLES_ENUM } from '@djengo/proto-contracts';
 
 @Injectable()
 export class RolesService {
@@ -24,7 +24,7 @@ export class RolesService {
       success: true,
       message: JSON.stringify(roles),
       status: 200,
-      roles: toCamelCase(roles),
+      roles: Helpers.toCamelCase(roles),
     };
   }
 }

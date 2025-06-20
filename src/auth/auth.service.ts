@@ -9,18 +9,21 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { Helpers } from 'src/lib/helper/helpers';
 import { UserService } from 'src/user/user.service';
 import { CommunicationService } from 'src/modules/communication/communication.service';
 import { OrganizationsService } from 'src/modules/organizations/organizations.service';
 import { ROLES_ENUM } from 'prisma/enum';
 import { VerificationPurpose } from '@prisma/client';
 import {
+  LogoutRequest,
+  RefreshTokenRequest,
   RegisterRequest,
   SendOtpRequest,
   SendOtpType,
+  VerifyOtpRequest,
 } from 'src/shared/dependencies/profile.pb';
 import { RpcException } from '@nestjs/microservices';
+import { Helpers } from '@djengo/proto-contracts';
 
 @Injectable()
 export class AuthService {
@@ -96,8 +99,8 @@ export class AuthService {
     };
 
     const auth_token = this.jwtService.sign(payload, {
-      secret: process.env.JWT_ACCESS_SECRET,
-      expiresIn: '5m',
+      secret: process.env.JWT_AUTH_SECRET,
+      expiresIn: '10m',
     });
 
     return { auth_token };
@@ -280,7 +283,7 @@ export class AuthService {
           user_id: user.user_id,
           otp_code: otp,
           purpose: VerificationPurpose.EMAIL_VERIFICATION,
-          expires_at: Helpers.getFutureTimestamp({ seconds: 95 }),
+          expires_at: Helpers.getFutureTimestamp({ seconds: 70 }),
         },
       });
 
@@ -296,7 +299,7 @@ export class AuthService {
       });
       return {
         message: 'ACCOUNT CREATED SUCCESSFULLY, OTP SENT TO EMAIL',
-        auth_token,
+        authToken: auth_token,
       };
     } catch (error) {
       throw new RpcException(error);
@@ -354,7 +357,7 @@ export class AuthService {
         user_id: user.user_id,
       });
 
-      return { user: _user, access_token };
+      return { user: Helpers.toCamelCase(_user), accessToken: access_token };
     } catch (error) {
       throw new RpcException({
         code: 500,
@@ -363,17 +366,18 @@ export class AuthService {
     }
   }
 
-  async logout({ user_id }: { user_id: string }) {
+  async logout({ userId }: LogoutRequest) {
     try {
+      console.log('LOGOUT REQUEST', userId);
       await this.prisma.user.update({
-        where: { user_id },
+        where: { user_id: userId },
         data: { refresh_token: '' },
       });
       await this.communicationService.clearUserPushSubscriptions({
-        userId: user_id,
+        userId,
       });
       this.logger.log(
-        `User ${user_id} logged out and push subscriptions cleared`,
+        `User ${userId} logged out and push subscriptions cleared`,
       );
       return { message: 'Logout successful' };
     } catch (error) {
@@ -384,14 +388,18 @@ export class AuthService {
   async sendOtp({ token, type }: SendOtpRequest) {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_ACCESS_SECRET,
+        secret: process.env.JWT_AUTH_SECRET,
       });
       const user = await this.prisma.user.findUnique({
         where: {
           user_id: payload.user_id,
         },
       });
-      if (!user) throw new NotFoundException('user for otp not active');
+      if (!user)
+        throw new RpcException({
+          code: 404,
+          message: 'user for otp not active',
+        });
       const otp = Helpers.generateOTP({
         length: 6,
         options: {
@@ -417,18 +425,72 @@ export class AuthService {
         message: 'otp sent successfully',
       };
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new RpcException(error);
     }
   }
 
-  async refreshToken(user_id: string) {
+  async verifyOtp({ otp, token, type }: VerifyOtpRequest) {
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: process.env.JWT_AUTH_SECRET,
+      });
+      const verification = await this.prisma.verification.findFirst({
+        where: { user_id: payload.user_id, otp_code: otp },
+      });
+      if (!verification) {
+        throw new RpcException({
+          code: 401,
+          message: 'Invalid OTP',
+        });
+      }
+      if (verification.expires_at < new Date()) {
+        await this.prisma.verification.delete({
+          where: { verification_id: verification.verification_id },
+        });
+        throw new RpcException({
+          code: 401,
+          message: 'OTP expired',
+        });
+      }
+      await this.prisma.verification.delete({
+        where: { verification_id: verification.verification_id },
+      });
+
+      if (type === SendOtpType.REGISTRATION) {
+        await this.prisma.user.update({
+          where: { user_id: payload.user_id },
+          data: { email_verified: true },
+        });
+      }
+
+      const { access_token } = await this.generateAccessToken({
+        user_id: payload.user_id,
+      });
+      const user = await this.userService.findOne({
+        user_id: payload.user_id,
+      });
+
+      return {
+        message: 'OTP verified successfully',
+        accessToken: access_token,
+        user: Helpers.toCamelCase(user),
+      };
+    } catch (error) {
+      throw new RpcException(error);
+    }
+  }
+
+  async refreshToken(data: RefreshTokenRequest) {
     try {
       const refreshToken = await this.prisma.user.findUnique({
-        where: { user_id },
+        where: { user_id: data.userId },
         select: { refresh_token: true },
       });
       if (!refreshToken) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new RpcException({
+          code: 401,
+          message: 'Invalid refresh token',
+        });
       }
       const payload = await this.jwtService.verifyAsync(
         refreshToken.refresh_token,
@@ -442,17 +504,23 @@ export class AuthService {
       });
       // console.log('USER', user);
       if (!user) {
-        throw new UnauthorizedException('Invalid user');
+        throw new RpcException({
+          code: 401,
+          message: 'Invalid user',
+        });
       }
 
       const { access_token } = await this.generateAccessToken({
         user_id: user.user_id,
       });
 
-      return { user, access_token };
+      return { user, accessToken: access_token };
     } catch (error) {
       console.log('ERROR', error);
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new RpcException({
+        code: 401,
+        message: 'Invalid refresh token',
+      });
     }
   }
 }

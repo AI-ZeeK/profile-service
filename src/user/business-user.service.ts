@@ -12,6 +12,7 @@ import { UpdateUserDto } from './dto/create-user.dto';
 import { Logger } from '@nestjs/common';
 import { GetUserRequest } from 'src/shared/dependencies/profile.pb';
 import { RpcException } from '@nestjs/microservices';
+import { OrganizationsService } from 'src/modules/organizations/organizations.service';
 
 type UserWithAvatar<T = {}> = User & {
   avatar_url: string | null;
@@ -21,7 +22,10 @@ type UserWithAvatar<T = {}> = User & {
 export class BusinessUserService {
   private readonly logger = new Logger(BusinessUserService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private organizationService: OrganizationsService,
+  ) {}
 
   async getBusinessUser(payload: GetUserRequest) {
     try {
@@ -40,9 +44,14 @@ export class BusinessUserService {
         });
       }
       businessUser.user.password = '';
+      const organization = await this.organizationService.getOrganization({
+        organizationId: businessUser.organization_id,
+      });
+
       return {
         success: true,
         business_user: businessUser,
+        organization: organization.organization,
       };
     } catch (error) {
       throw new BadRequestException(error.message);

@@ -5,6 +5,7 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { Logger } from '@nestjs/common';
 import { PROFILE_PACKAGE_NAME } from './shared/dependencies/profile.pb';
+import { CamelCaseInterceptor } from './middleware/interceptors/camel-case.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('ProfileService');
@@ -21,6 +22,9 @@ async function bootstrap() {
       },
     },
   );
+
+  // Register the camelCase interceptor globally
+  app.useGlobalInterceptors(new CamelCaseInterceptor());
 
   await app.listen();
   logger.log(

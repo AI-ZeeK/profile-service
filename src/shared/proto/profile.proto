@@ -10,7 +10,7 @@ service ProfileService {
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (AuthResponse);
   rpc SendOtp(SendOtpRequest) returns (SendOtpResponse);
-  rpc VerifyOtp(VerifyOtpRequest) returns (SendOtpResponse);
+  rpc VerifyOtp(VerifyOtpRequest) returns (VerifyOtpResponse);
   rpc Logout(LogoutRequest) returns (SendOtpResponse);
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
 
@@ -54,6 +54,14 @@ message Role {
 
 message GetRolesResponse {
   repeated Role roles = 1;
+}
+
+message VerifyOtpResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional string message = 3;
+  optional string access_token = 4;
+  optional User user = 5;
 }
 
 message LoginRequest {
@@ -164,6 +172,7 @@ message BusinessUserResponse {
   bool success = 1;
   optional string error = 2;
   optional BusinessUser business_user = 3;
+  optional Organization organization = 4;
 }
 
 message UserResponse {
@@ -239,6 +248,19 @@ message Contact {
   optional string avatar_url = 6;
   optional string last_seen = 7;
   bool email_verified = 8;
+}
+
+message Organization {
+  string organization_id = 1;
+  string name = 2;
+  string phone_number = 3;
+  string email = 4;
+  string registration_number = 5;
+  string registration_date = 6;
+  string creator_id = 7;
+  string created_at = 8;
+  string updated_at = 9;
+  optional string deleted_at = 10;
 }
 
 message Address {

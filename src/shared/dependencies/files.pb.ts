@@ -173,7 +173,7 @@ export interface RetryProcessingRequest {
 export interface TempFileResponse {
   success: boolean;
   error?: string | undefined;
-  tempFile?: TempFile | undefined;
+  fileUrl?: string | undefined;
 }
 
 export interface GetTempFilesResponse {

@@ -53,6 +53,14 @@ export interface GetRolesResponse {
   roles: Role[];
 }
 
+export interface VerifyOtpResponse {
+  success: boolean;
+  error?: string | undefined;
+  message?: string | undefined;
+  accessToken?: string | undefined;
+  user?: User | undefined;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -148,6 +156,7 @@ export interface BusinessUserResponse {
   success: boolean;
   error?: string | undefined;
   businessUser?: BusinessUser | undefined;
+  organization?: Organization | undefined;
 }
 
 export interface UserResponse {
@@ -223,6 +232,19 @@ export interface Contact {
   emailVerified: boolean;
 }
 
+export interface Organization {
+  organizationId: string;
+  name: string;
+  phoneNumber: string;
+  email: string;
+  registrationNumber: string;
+  registrationDate: string;
+  creatorId: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | undefined;
+}
+
 export interface Address {
   addressId?: string | undefined;
   street?: string | undefined;
@@ -258,7 +280,7 @@ export interface ProfileServiceClient {
 
   sendOtp(request: SendOtpRequest): Observable<SendOtpResponse>;
 
-  verifyOtp(request: VerifyOtpRequest): Observable<SendOtpResponse>;
+  verifyOtp(request: VerifyOtpRequest): Observable<VerifyOtpResponse>;
 
   logout(request: LogoutRequest): Observable<SendOtpResponse>;
 
@@ -290,7 +312,7 @@ export interface ProfileServiceController {
 
   sendOtp(request: SendOtpRequest): Promise<SendOtpResponse> | Observable<SendOtpResponse> | SendOtpResponse;
 
-  verifyOtp(request: VerifyOtpRequest): Promise<SendOtpResponse> | Observable<SendOtpResponse> | SendOtpResponse;
+  verifyOtp(request: VerifyOtpRequest): Promise<VerifyOtpResponse> | Observable<VerifyOtpResponse> | VerifyOtpResponse;
 
   logout(request: LogoutRequest): Promise<SendOtpResponse> | Observable<SendOtpResponse> | SendOtpResponse;
 

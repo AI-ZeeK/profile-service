@@ -3,6 +3,7 @@ import { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import {
   CreateOrganizationRequest,
+  GetOrganizationRequest,
   ORGANIZATION_SERVICE_NAME,
   OrganizationServiceClient,
   protobufPackage,
@@ -32,5 +33,9 @@ export class OrganizationsService {
     return await firstValueFrom(
       this.organizationService.validateCompanyReference(data),
     );
+  }
+
+  async getOrganization(data: GetOrganizationRequest) {
+    return await firstValueFrom(this.organizationService.getOrganization(data));
   }
 }

@@ -22,58 +22,21 @@ export class AppController {
 
   // 👤 User Management
 
-  // @GrpcMethod(PROFILE_SERVICE_NAME, 'GetUser')
-  // async getUser(data: GetUserRequest) {
-  //   try {
-  //     this.logger.log(`gRPC: GetUser ${data.user_id}`);
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'GetUser')
+  async getUser(data: GetUserRequest) {
+    this.logger.log(`gRPC: GetUser ${data.userId}`);
 
-  //     const user = await this.userService.findOne({
-  //       user_id: data.user_id,
-  //     });
+    return await this.userService.getUser(data);
+  }
 
-  //     if (!user) {
-  //       return {
-  //         success: false,
-  //         error: 'User not found',
-  //       };
-  //     }
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'GetUserByEmail')
+  async getUserByEmail(data: GetUserByEmailRequest) {
+    this.logger.log(`gRPC: GetUserByEmail ${data.email}`);
 
-  //     return {
-  //       success: true,
-  //       user: this.mapUserResponse(user),
-  //     };
-  //   } catch (error) {
-  //     this.logger.error(`Error in GetUser: ${error.message}`);
-  //     return {
-  //       success: false,
-  //       error: error.message,
-  //     };
-  //   }
-  // }
-
-  // @GrpcMethod(PROFILE_SERVICE_NAME, 'GetUserByEmail')
-  // async getUserByEmail(data: GetUserByEmailRequest) {
-  //   try {
-  //     this.logger.log(`gRPC: GetUserByEmail ${data.email}`);
-
-  //     const result = await this.userService.fetchByEmail({
-  //       email: data.email,
-  //     });
-
-  //     return {
-  //       success: result.status,
-  //       message: result.message,
-  //       user: result.data ? this.mapUserResponse(result.data) : null,
-  //     };
-  //   } catch (error) {
-  //     this.logger.error(`Error in GetUserByEmail: ${error.message}`);
-  //     return {
-  //       success: false,
-  //       error: error.message,
-  //       message: 'Failed to fetch user',
-  //     };
-  //   }
-  // }
+    return await this.userService.fetchByEmail({
+      email: data.email,
+    });
+  }
 
   // @GrpcMethod(PROFILE_SERVICE_NAME, 'UpdateUserStatus')
   // async updateUserStatus(data: UpdateUserStatusRequest) {
@@ -129,65 +92,23 @@ export class AppController {
   //   }
   // }
 
-  // @GrpcMethod(PROFILE_SERVICE_NAME, 'UpdateUser')
-  // async updateUser(data: UpdateUserRequest) {
-  //   try {
-  //     this.logger.log(`gRPC: UpdateUser ${data.user_id}`);
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'UpdateUser')
+  async updateUser(data: UpdateUserRequest) {
+    return await this.userService.updateUser(data);
+  }
 
-  //     // Create a mock request object as expected by the service
-  //     const mockReqUser = {
-  //       user: { user_id: data.user_id },
-  //     };
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'GetBusinessUser')
+  async getBusinessUser(data: GetUserRequest) {
+    this.logger.log(`gRPC: GetBusinessUser ${data.userId}`);
 
-  //     const updateData = {
-  //       first_name: data.first_name,
-  //       last_name: data.last_name,
-  //       email: data.email,
-  //       phone_number: data.phone_number,
-  //       avatar_url: data.avatar_url,
-  //       address: data.address,
-  //     };
-
-  //     // Use orchestrator for distributed transaction
-  //     // const user = await this.userUpdateOrchestrator.updateUserDistributed(
-  //     //   mockReqUser as any,
-  //     //   updateData as any,
-  //     // );
-
-  //     return {
-  //       success: true,
-  //       // user: this.mapBasicUserResponse(user),
-  //     };
-  //   } catch (error) {
-  //     this.logger.error(`Error in UpdateUser: ${error.message}`);
-  //     return {
-  //       success: false,
-  //       error: error.message,
-  //     };
-  //   }
-  // }
-
-  // @GrpcMethod(PROFILE_SERVICE_NAME, 'GetBusinessUser')
-  // async getBusinessUser(data: GetUserRequest) {
-  //   try {
-  //     this.logger.log(`gRPC: GetBusinessUser ${data.user_id}`);
-  //     const businessUser = await this.businessUserService.getBusinessUser(data);
-  //     return {
-  //       success: true,
-  //       business_user: businessUser,
-  //     };
-  //   } catch (error) {
-  //     throw new RpcException(error);
-  //   }
-  // }
+    return await this.businessUserService.getBusinessUser(data);
+  }
 
   // @GrpcMethod(PROFILE_SERVICE_NAME, 'ValidateEmail')
   // async getBusinessUserByEmail(data: GetUserByEmailRequest) {
-  //   try {
-  //     this.logger.log(`gRPC: GetBusinessUserByEmail ${data.email}`);
-  //   } catch (error) {
-  //     throw new RpcException(error);
-  //   }
+  //   this.logger.log(`gRPC: GetBusinessUserByEmail ${data.email}`);
+
+  //   return await this.businessUserService.getBusinessUserByEmail(data);
   // }
 
   // 🛠️ Helper Methods
