@@ -6,6 +6,7 @@ import { join } from 'path';
 import { Logger } from '@nestjs/common';
 import { PROFILE_PACKAGE_NAME } from './shared/dependencies/profile.pb';
 import { CamelCaseInterceptor } from './middleware/interceptors/camel-case.interceptor';
+import { GrpcLoggerInterceptor } from './middleware/grpc-logger.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('ProfileService');
@@ -25,6 +26,7 @@ async function bootstrap() {
 
   // Register the camelCase interceptor globally
   app.useGlobalInterceptors(new CamelCaseInterceptor());
+  app.useGlobalInterceptors(new GrpcLoggerInterceptor());
 
   await app.listen();
   logger.log(

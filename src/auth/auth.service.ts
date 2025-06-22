@@ -482,6 +482,12 @@ export class AuthService {
 
   async refreshToken(data: RefreshTokenRequest) {
     try {
+      if (!data.userId) {
+        throw new RpcException({
+          code: 401,
+          message: 'Invalid user',
+        });
+      }
       const refreshToken = await this.prisma.user.findUnique({
         where: { user_id: data.userId },
         select: { refresh_token: true },
@@ -516,7 +522,6 @@ export class AuthService {
 
       return { user, accessToken: access_token };
     } catch (error) {
-      console.log('ERROR', error);
       throw new RpcException({
         code: 401,
         message: 'Invalid refresh token',
