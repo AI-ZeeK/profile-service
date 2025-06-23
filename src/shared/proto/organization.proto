@@ -8,14 +8,125 @@ service OrganizationService {
   rpc CreateOrganization(CreateOrganizationRequest) returns (OrganizationResponse);
   rpc GetOrganization(GetOrganizationRequest) returns (OrganizationResponse);
 
+  // Validate Company Reference
+  rpc ValidateCompanyReference(ValidateCompanyReferenceRequest) returns (ValidateCompanyReferenceResponse);
 
-  rpc validateCompanyReference(ValidateCompanyReferenceRequest) returns (ValidateCompanyReferenceResponse);
+  // Create Company
+  // rpc CreateCompany(CreateCompanyRequest) returns (CompanyResponse);
 
+  //Delete Utilities
+  rpc DeleteTableLocation(DeleteTableLocationRequest) returns (UtilitiesResponse);
+  rpc DeleteBedSize(DeleteBedSizeRequest) returns (UtilitiesResponse);
+  rpc DeleteRoomLocation(DeleteRoomLocationRequest) returns (UtilitiesResponse);
 
+  // CREATE UTILITIES
+  rpc CreateTableLocation(CreateTableLocationRequest) returns (UtilitiesResponse);
+  rpc CreateBedSize(CreateBedSizeRequest) returns (UtilitiesResponse);
+  rpc CreateRoomLocation(CreateRoomLocationRequest) returns (UtilitiesResponse);
 
+  // Utilities
+  rpc FetchServiceTypes(EmptyRequest) returns (GetServiceTypesResponse);
+  rpc GetTableLocations(OrganizationIdRequest) returns (GetTableLocationsResponse);
+  rpc GetBedSizes(OrganizationIdRequest) returns (GetBedSizesResponse);
+  rpc GetRoomLocations(OrganizationIdRequest) returns (GetRoomLocationsResponse);
 }
 
+
+
 // 📝 REQUEST MESSAGES
+
+message EmptyRequest {
+}
+
+
+message DeleteTableLocationRequest {
+  int32 table_location_id = 1;
+} 
+
+message DeleteBedSizeRequest {
+  int32 bed_size_id = 1;
+}
+
+message DeleteRoomLocationRequest {
+  int32 room_location_id = 1;
+}
+
+
+
+  message GetServiceTypesResponse {
+    bool success = 1;
+    optional string error = 2;
+    repeated ServiceType service_types = 3;
+}
+
+message BranchIdRequest {
+  string branch_id = 1;
+}
+
+message OrganizationIdRequest {
+  string organization_id = 1;
+}
+
+message ServiceType {
+  int32 service_type_id = 1;
+  string name = 2;
+  string description = 3;
+  bool is_active = 4;
+}
+
+// � RESPONSE MESSAGES
+
+
+
+message TableLocation {
+  int32 table_location_id = 1;
+  string name = 2;
+  string description = 3;
+  bool is_global = 4;
+  bool is_active = 5;
+}
+
+message RoomLocation {
+  int32 room_location_id = 1;
+  string name = 2;
+  string description = 3;
+  bool is_global = 4;
+  bool is_active = 5;
+}
+
+message UtilitiesResponse {
+  bool success = 1;
+  optional string error = 2;
+  string message = 3;
+}
+
+message BedSize {
+  int32 bed_size_id = 1;
+  string name = 2;
+  string description = 3;
+  bool is_global = 4;
+  bool is_active = 5;
+}
+
+message GetTableLocationsResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated TableLocation table_locations = 3;
+}
+
+message GetBedSizesResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated BedSize bed_sizes = 3;
+}
+
+
+message GetRoomLocationsResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated RoomLocation room_locations = 3;
+}
+
 
 message ValidateCompanyReferenceRequest {
   string company_ref = 1;
@@ -26,6 +137,27 @@ message ValidateCompanyReferenceResponse {
   optional string error = 2;
   string company_id = 3;
 }
+
+message CreateTableLocationRequest {
+  string name = 1;
+  string organization_id = 2;
+  string creator_id = 3;
+}
+
+message CreateBedSizeRequest {
+  string name = 1;
+  string organization_id = 2;
+  string creator_id = 3;
+}
+
+message CreateRoomLocationRequest {
+  string name = 1;
+  string organization_id = 2;
+  string creator_id = 3;
+}
+
+
+
 
 message CreateOrganizationRequest {
   string creator_id = 1;

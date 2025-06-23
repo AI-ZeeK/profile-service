@@ -10,6 +10,90 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "organization";
 
+export interface EmptyRequest {
+}
+
+export interface DeleteTableLocationRequest {
+  tableLocationId: number;
+}
+
+export interface DeleteBedSizeRequest {
+  bedSizeId: number;
+}
+
+export interface DeleteRoomLocationRequest {
+  roomLocationId: number;
+}
+
+export interface GetServiceTypesResponse {
+  success: boolean;
+  error?: string | undefined;
+  serviceTypes: ServiceType[];
+}
+
+export interface BranchIdRequest {
+  branchId: string;
+}
+
+export interface OrganizationIdRequest {
+  organizationId: string;
+}
+
+export interface ServiceType {
+  serviceTypeId: number;
+  name: string;
+  description: string;
+  isActive: boolean;
+}
+
+export interface TableLocation {
+  tableLocationId: number;
+  name: string;
+  description: string;
+  isGlobal: boolean;
+  isActive: boolean;
+}
+
+export interface RoomLocation {
+  roomLocationId: number;
+  name: string;
+  description: string;
+  isGlobal: boolean;
+  isActive: boolean;
+}
+
+export interface UtilitiesResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+}
+
+export interface BedSize {
+  bedSizeId: number;
+  name: string;
+  description: string;
+  isGlobal: boolean;
+  isActive: boolean;
+}
+
+export interface GetTableLocationsResponse {
+  success: boolean;
+  error?: string | undefined;
+  tableLocations: TableLocation[];
+}
+
+export interface GetBedSizesResponse {
+  success: boolean;
+  error?: string | undefined;
+  bedSizes: BedSize[];
+}
+
+export interface GetRoomLocationsResponse {
+  success: boolean;
+  error?: string | undefined;
+  roomLocations: RoomLocation[];
+}
+
 export interface ValidateCompanyReferenceRequest {
   companyRef: string;
 }
@@ -18,6 +102,24 @@ export interface ValidateCompanyReferenceResponse {
   success: boolean;
   error?: string | undefined;
   companyId: string;
+}
+
+export interface CreateTableLocationRequest {
+  name: string;
+  organizationId: string;
+  creatorId: string;
+}
+
+export interface CreateBedSizeRequest {
+  name: string;
+  organizationId: string;
+  creatorId: string;
+}
+
+export interface CreateRoomLocationRequest {
+  name: string;
+  organizationId: string;
+  creatorId: string;
 }
 
 export interface CreateOrganizationRequest {
@@ -65,7 +167,35 @@ export interface OrganizationServiceClient {
 
   getOrganization(request: GetOrganizationRequest): Observable<OrganizationResponse>;
 
+  /** Validate Company Reference */
+
   validateCompanyReference(request: ValidateCompanyReferenceRequest): Observable<ValidateCompanyReferenceResponse>;
+
+  /** Delete Utilities */
+
+  deleteTableLocation(request: DeleteTableLocationRequest): Observable<UtilitiesResponse>;
+
+  deleteBedSize(request: DeleteBedSizeRequest): Observable<UtilitiesResponse>;
+
+  deleteRoomLocation(request: DeleteRoomLocationRequest): Observable<UtilitiesResponse>;
+
+  /** CREATE UTILITIES */
+
+  createTableLocation(request: CreateTableLocationRequest): Observable<UtilitiesResponse>;
+
+  createBedSize(request: CreateBedSizeRequest): Observable<UtilitiesResponse>;
+
+  createRoomLocation(request: CreateRoomLocationRequest): Observable<UtilitiesResponse>;
+
+  /** Utilities */
+
+  fetchServiceTypes(request: EmptyRequest): Observable<GetServiceTypesResponse>;
+
+  getTableLocations(request: OrganizationIdRequest): Observable<GetTableLocationsResponse>;
+
+  getBedSizes(request: OrganizationIdRequest): Observable<GetBedSizesResponse>;
+
+  getRoomLocations(request: OrganizationIdRequest): Observable<GetRoomLocationsResponse>;
 }
 
 /** 🏢 Organization Service - handles organization and branch management */
@@ -81,17 +211,79 @@ export interface OrganizationServiceController {
     request: GetOrganizationRequest,
   ): Promise<OrganizationResponse> | Observable<OrganizationResponse> | OrganizationResponse;
 
+  /** Validate Company Reference */
+
   validateCompanyReference(
     request: ValidateCompanyReferenceRequest,
   ):
     | Promise<ValidateCompanyReferenceResponse>
     | Observable<ValidateCompanyReferenceResponse>
     | ValidateCompanyReferenceResponse;
+
+  /** Delete Utilities */
+
+  deleteTableLocation(
+    request: DeleteTableLocationRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  deleteBedSize(
+    request: DeleteBedSizeRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  deleteRoomLocation(
+    request: DeleteRoomLocationRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  /** CREATE UTILITIES */
+
+  createTableLocation(
+    request: CreateTableLocationRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  createBedSize(
+    request: CreateBedSizeRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  createRoomLocation(
+    request: CreateRoomLocationRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  /** Utilities */
+
+  fetchServiceTypes(
+    request: EmptyRequest,
+  ): Promise<GetServiceTypesResponse> | Observable<GetServiceTypesResponse> | GetServiceTypesResponse;
+
+  getTableLocations(
+    request: OrganizationIdRequest,
+  ): Promise<GetTableLocationsResponse> | Observable<GetTableLocationsResponse> | GetTableLocationsResponse;
+
+  getBedSizes(
+    request: OrganizationIdRequest,
+  ): Promise<GetBedSizesResponse> | Observable<GetBedSizesResponse> | GetBedSizesResponse;
+
+  getRoomLocations(
+    request: OrganizationIdRequest,
+  ): Promise<GetRoomLocationsResponse> | Observable<GetRoomLocationsResponse> | GetRoomLocationsResponse;
 }
 
 export function OrganizationServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createOrganization", "getOrganization", "validateCompanyReference"];
+    const grpcMethods: string[] = [
+      "createOrganization",
+      "getOrganization",
+      "validateCompanyReference",
+      "deleteTableLocation",
+      "deleteBedSize",
+      "deleteRoomLocation",
+      "createTableLocation",
+      "createBedSize",
+      "createRoomLocation",
+      "fetchServiceTypes",
+      "getTableLocations",
+      "getBedSizes",
+      "getRoomLocations",
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("OrganizationService", method)(constructor.prototype[method], method, descriptor);

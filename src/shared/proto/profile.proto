@@ -7,8 +7,8 @@ package profile;
 
 // 👤 Profile Service - handles user profiles and user management
 service ProfileService {
-  rpc Register(RegisterRequest) returns (RegisterResponse);
-  rpc Login(LoginRequest) returns (AuthResponse);
+  rpc Register(RegisterRequest) returns (AuthInitialResponse);
+  rpc Login(LoginRequest) returns (AuthInitialResponse);
   rpc SendOtp(SendOtpRequest) returns (SendOtpResponse);
   rpc VerifyOtp(VerifyOtpRequest) returns (VerifyOtpResponse);
   rpc Logout(LogoutRequest) returns (SendOtpResponse);
@@ -39,12 +39,6 @@ message CommonResponseArray {
 
 message EmptyRequest {}
 
-message RegisterResponse {
-  bool success = 1;
-  optional string error = 2;
-  optional string message = 3;
-  optional string auth_token = 4;
-}
 
 message Role {
   string role_id = 1;
@@ -99,6 +93,12 @@ message AuthResponse {
   optional string error = 2;
   User user = 3;
   string access_token = 4;
+}
+message AuthInitialResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional string message = 3;
+  optional string auth_token = 4;
 }
 
 message RegisterRequest {

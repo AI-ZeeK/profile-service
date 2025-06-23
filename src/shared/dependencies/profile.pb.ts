@@ -36,13 +36,6 @@ export interface CommonResponseArray {
 export interface EmptyRequest {
 }
 
-export interface RegisterResponse {
-  success: boolean;
-  error?: string | undefined;
-  message?: string | undefined;
-  authToken?: string | undefined;
-}
-
 export interface Role {
   roleId: string;
   roleName: string;
@@ -94,6 +87,13 @@ export interface AuthResponse {
   error?: string | undefined;
   user: User | undefined;
   accessToken: string;
+}
+
+export interface AuthInitialResponse {
+  success: boolean;
+  error?: string | undefined;
+  message?: string | undefined;
+  authToken?: string | undefined;
 }
 
 export interface RegisterRequest {
@@ -274,9 +274,9 @@ wrappers[".google.protobuf.Struct"] = { fromObject: Struct.wrap, toObject: Struc
 /** 👤 Profile Service - handles user profiles and user management */
 
 export interface ProfileServiceClient {
-  register(request: RegisterRequest): Observable<RegisterResponse>;
+  register(request: RegisterRequest): Observable<AuthInitialResponse>;
 
-  login(request: LoginRequest): Observable<AuthResponse>;
+  login(request: LoginRequest): Observable<AuthInitialResponse>;
 
   sendOtp(request: SendOtpRequest): Observable<SendOtpResponse>;
 
@@ -306,9 +306,11 @@ export interface ProfileServiceClient {
 /** 👤 Profile Service - handles user profiles and user management */
 
 export interface ProfileServiceController {
-  register(request: RegisterRequest): Promise<RegisterResponse> | Observable<RegisterResponse> | RegisterResponse;
+  register(
+    request: RegisterRequest,
+  ): Promise<AuthInitialResponse> | Observable<AuthInitialResponse> | AuthInitialResponse;
 
-  login(request: LoginRequest): Promise<AuthResponse> | Observable<AuthResponse> | AuthResponse;
+  login(request: LoginRequest): Promise<AuthInitialResponse> | Observable<AuthInitialResponse> | AuthInitialResponse;
 
   sendOtp(request: SendOtpRequest): Promise<SendOtpResponse> | Observable<SendOtpResponse> | SendOtpResponse;
 

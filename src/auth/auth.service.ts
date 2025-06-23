@@ -164,14 +164,6 @@ export class AuthService {
     roleName,
   }: RegisterRequest) {
     try {
-      console.log(
-        'REGISTER REQUEST',
-        email,
-        password,
-        companyRef,
-        phoneNumber,
-        roleName,
-      );
       let user = await this.prisma.user.findUnique({
         where: {
           email: email.toLowerCase(),
@@ -272,30 +264,11 @@ export class AuthService {
         });
       }
 
-      const otp = Helpers.generateOTP({
-        length: 6,
-        options: {
-          numbers: true,
-        },
-      });
-      await this.prisma.verification.create({
-        data: {
-          user_id: user.user_id,
-          otp_code: otp,
-          purpose: VerificationPurpose.EMAIL_VERIFICATION,
-          expires_at: Helpers.getFutureTimestamp({ seconds: 70 }),
-        },
-      });
-
-      await this.communicationService.sendOtp({
+      const { auth_token } = await this._sendOtp({
+        user_id: user!.user_id,
         email: user?.email,
         name: user?.email?.split('@')[0],
-        otp,
         type: SendOtpType.REGISTRATION,
-      });
-
-      const { auth_token } = await this.generateAuthToken({
-        user_id: user!.user_id,
       });
       return {
         message: 'ACCOUNT CREATED SUCCESSFULLY, OTP SENT TO EMAIL',
@@ -304,6 +277,45 @@ export class AuthService {
     } catch (error) {
       throw new RpcException(error);
     }
+  }
+
+  private async _sendOtp({
+    user_id,
+    email,
+    name,
+    type,
+  }: {
+    user_id: string;
+    email: string;
+    name: string;
+    type: SendOtpType;
+  }) {
+    const otp = Helpers.generateOTP({
+      length: 6,
+      options: {
+        numbers: true,
+      },
+    });
+    await this.prisma.verification.create({
+      data: {
+        user_id: user_id,
+        otp_code: otp,
+        purpose: VerificationPurpose.EMAIL_VERIFICATION,
+        expires_at: Helpers.getFutureTimestamp({ seconds: 70 }),
+      },
+    });
+
+    await this.communicationService.sendOtp({
+      email: email,
+      name: name,
+      otp,
+      type: type,
+    });
+
+    const { auth_token } = await this.generateAuthToken({
+      user_id: user_id,
+    });
+    return { auth_token };
   }
 
   // private async validateCompanyReference(
@@ -349,15 +361,18 @@ export class AuthService {
           message: 'Invalid credentials',
         });
       }
-      const { access_token } = await this.generateAccessToken({
+
+      const { auth_token } = await this._sendOtp({
         user_id: user.user_id,
+        email: user?.email,
+        name: user?.email?.split('@')[0],
+        type: SendOtpType.SIGNIN,
       });
 
-      const _user = await this.userService.findOne({
-        user_id: user.user_id,
-      });
-
-      return { user: Helpers.toCamelCase(_user), accessToken: access_token };
+      return {
+        message: 'LOGIN SUCCESSFUL & OTP SENT',
+        authToken: auth_token,
+      };
     } catch (error) {
       throw new RpcException({
         code: 500,
