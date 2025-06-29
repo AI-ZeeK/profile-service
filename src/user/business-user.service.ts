@@ -10,7 +10,10 @@ import { UserAuthorizedRequest } from 'src/interfaces/user.interface';
 import { Prisma, User } from '@prisma/client';
 import { UpdateUserDto } from './dto/create-user.dto';
 import { Logger } from '@nestjs/common';
-import { GetUserRequest } from 'src/shared/dependencies/profile.pb';
+import {
+  CreateOrUpdateBusinessUserRoleRequest,
+  GetUserRequest,
+} from 'src/shared/dependencies/profile.pb';
 import { RpcException } from '@nestjs/microservices';
 import { OrganizationsService } from 'src/modules/organizations/organizations.service';
 
@@ -52,6 +55,63 @@ export class BusinessUserService {
         success: true,
         business_user: businessUser,
         organization: organization.organization,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async createOrUpdateBusinessUserRole(
+    payload: CreateOrUpdateBusinessUserRoleRequest,
+  ) {
+    try {
+      const { businessUserIds, organizationRoleId } = payload;
+      for (const business_user_id of businessUserIds) {
+        // Set all roles for this user to inactive
+        await this.prisma.businessUserRole.updateMany({
+          where: {
+            business_user_id,
+            is_active: true,
+          },
+          data: {
+            is_active: false,
+          },
+        });
+
+        // Check if the user already has this role
+        const existingRole = await this.prisma.businessUserRole.findFirst({
+          where: {
+            business_user_id,
+            organization_role_id: organizationRoleId,
+          },
+        });
+
+        if (existingRole) {
+          // Set this role to active
+          await this.prisma.businessUserRole.update({
+            where: {
+              business_user_id,
+              organization_role_id: organizationRoleId,
+            },
+            data: {
+              is_active: true,
+            },
+          });
+        } else {
+          // Create the new role as active
+          await this.prisma.businessUserRole.create({
+            data: {
+              business_user_id,
+              organization_role_id: organizationRoleId,
+              is_active: true,
+            },
+          });
+        }
+      }
+
+      return {
+        success: true,
+        message: 'Business user role handled successfully',
       };
     } catch (error) {
       throw new BadRequestException(error.message);

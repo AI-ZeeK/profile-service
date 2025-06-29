@@ -3,11 +3,10 @@ import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { UserService } from './user/user.service';
 import {
   GetUserByEmailRequest,
-  GetUserContactsRequest,
   PROFILE_SERVICE_NAME,
-  UpdateUserStatusRequest,
   GetUserRequest,
   UpdateUserRequest,
+  CreateOrUpdateBusinessUserRoleRequest,
 } from './shared/dependencies/profile.pb';
 import { BusinessUserService } from './user/business-user.service';
 
@@ -36,6 +35,18 @@ export class AppController {
     return await this.userService.fetchByEmail({
       email: data.email,
     });
+  }
+
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'CreateOrUpdateBusinessUserRole')
+  async createOrUpdateBusinessUserRole(
+    data: CreateOrUpdateBusinessUserRoleRequest,
+  ) {
+    return await this.businessUserService.createOrUpdateBusinessUserRole(data);
+  }
+
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'FetchAllAdmin')
+  async fetchAllAdmin() {
+    return await this.userService.fetchAllAdmin();
   }
 
   // @GrpcMethod(PROFILE_SERVICE_NAME, 'UpdateUserStatus')

@@ -5,7 +5,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ADDRESS_TYPE_ENUM, FILE_ENTITY_TYPE_ENUM } from 'prisma/enum';
 import { UserAuthorizedRequest } from 'src/interfaces/user.interface';
 import { Prisma, User } from '@prisma/client';
 import { UpdateUserDto } from './dto/create-user.dto';
@@ -17,6 +16,10 @@ import {
   UpdateUserRequest,
 } from 'src/shared/dependencies/profile.pb';
 import { RpcException } from '@nestjs/microservices';
+import {
+  ADDRESS_TYPE_ENUM,
+  FILE_ENTITY_TYPE_ENUM,
+} from '@djengo/proto-contracts';
 
 type UserWithAvatar<T = {}> = User & {
   avatar_url: string | null;
@@ -78,10 +81,85 @@ export class UserService {
         business_user: business_user,
       };
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
+    }
+  }
+  async findOneAdmin<T extends Prisma.UserInclude>(
+    where: Prisma.PlatformUserWhereUniqueInput,
+    include?: T,
+    sample_data?: boolean,
+  ) {
+    try {
+      const userData = await this.prisma.platformUser.findUnique({
+        where,
+        include: {
+          ...include,
+        },
+      });
+
+      if (!userData) {
+        return null;
+      }
+
+      const address = await this.addressService.verifyAddress({
+        entityType: ADDRESS_TYPE_ENUM.USER_HOME,
+        entityId: userData.user_id,
+      });
+
+      const avatarFile = await this.filesService.verifyFile({
+        entityType: FILE_ENTITY_TYPE_ENUM.PLATFORM_USER_AVATAR,
+        entityId: userData.user_id,
+      });
+
+      return {
+        ...userData,
+        address,
+        avatar_url: avatarFile?.fileUrl || null,
+      };
+    } catch (error) {
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
     }
   }
 
+  async fetchAllAdmin() {
+    try {
+      const users = await this.prisma.platformUser.findMany({
+        include: {
+          role: true,
+        },
+      });
+      return {
+        success: true,
+        message: 'Users fetched successfully',
+        users: users,
+      };
+    } catch (error) {
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
+    }
+  }
+
+  async fetchAdminAccount({ user_id }: { user_id: string }) {
+    try {
+      const users = await this.findOneAdmin({
+        user_id: user_id,
+      });
+      return users;
+    } catch (error) {
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
+    }
+  }
   async fetchByEmail({ email }: { email: string }) {
     try {
       const user = await this.prisma.user.findUnique({
@@ -102,7 +180,10 @@ export class UserService {
         user: user,
       };
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
     }
   }
 
@@ -120,7 +201,10 @@ export class UserService {
       });
       return user;
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
     }
   }
 
@@ -249,7 +333,10 @@ export class UserService {
 
       return user;
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
     }
   }
 
@@ -269,7 +356,10 @@ export class UserService {
         user: user,
       };
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
     }
   }
 }

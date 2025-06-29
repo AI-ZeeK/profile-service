@@ -22,7 +22,22 @@ export enum rolesEnum {
 export enum SendOtpType {
   REGISTRATION = 0,
   SIGNIN = 1,
+  ADMIN_REGISTRATION = 2,
+  ADMIN_SIGNIN = 3,
+  FORGOT_PASSWORD = 4,
   UNRECOGNIZED = -1,
+}
+
+export interface OrganizationRoleIdRequest {
+  organizationRoleId: string;
+}
+
+export interface FetchOrganizationRolesResponse {
+  roles: Role[];
+}
+
+export interface FetchOrganizationRolesCountResponse {
+  count: number;
 }
 
 export interface CommonResponseArray {
@@ -36,9 +51,27 @@ export interface CommonResponseArray {
 export interface EmptyRequest {
 }
 
+export interface CreateOrUpdateBusinessUserRoleRequest {
+  businessUserIds: string[];
+  organizationRoleId: string;
+}
+
+export interface CreateOrUpdateBusinessUserRoleResponse {
+  success: boolean;
+  error?: string | undefined;
+  message?: string | undefined;
+}
+
 export interface Role {
   roleId: string;
   roleName: string;
+  isActive: boolean;
+}
+
+export interface BusinessUserRole {
+  businessUserRoleId: string;
+  businessUserId: string;
+  organizationRoleId: string;
   isActive: boolean;
 }
 
@@ -274,6 +307,8 @@ wrappers[".google.protobuf.Struct"] = { fromObject: Struct.wrap, toObject: Struc
 /** 👤 Profile Service - handles user profiles and user management */
 
 export interface ProfileServiceClient {
+  /** user services */
+
   register(request: RegisterRequest): Observable<AuthInitialResponse>;
 
   login(request: LoginRequest): Observable<AuthInitialResponse>;
@@ -301,11 +336,23 @@ export interface ProfileServiceClient {
   getUserContacts(request: GetUserContactsRequest): Observable<GetUserContactsResponse>;
 
   updateUser(request: UpdateUserRequest): Observable<UpdateUserResponse>;
+
+  /** BUSINESS ROLES */
+
+  createOrUpdateBusinessUserRole(
+    request: CreateOrUpdateBusinessUserRoleRequest,
+  ): Observable<CreateOrUpdateBusinessUserRoleResponse>;
+
+  fetchOrganizationRoles(request: OrganizationRoleIdRequest): Observable<FetchOrganizationRolesResponse>;
+
+  fetchOrganizationRolesCount(request: OrganizationRoleIdRequest): Observable<FetchOrganizationRolesCountResponse>;
 }
 
 /** 👤 Profile Service - handles user profiles and user management */
 
 export interface ProfileServiceController {
+  /** user services */
+
   register(
     request: RegisterRequest,
   ): Promise<AuthInitialResponse> | Observable<AuthInitialResponse> | AuthInitialResponse;
@@ -347,6 +394,29 @@ export interface ProfileServiceController {
   updateUser(
     request: UpdateUserRequest,
   ): Promise<UpdateUserResponse> | Observable<UpdateUserResponse> | UpdateUserResponse;
+
+  /** BUSINESS ROLES */
+
+  createOrUpdateBusinessUserRole(
+    request: CreateOrUpdateBusinessUserRoleRequest,
+  ):
+    | Promise<CreateOrUpdateBusinessUserRoleResponse>
+    | Observable<CreateOrUpdateBusinessUserRoleResponse>
+    | CreateOrUpdateBusinessUserRoleResponse;
+
+  fetchOrganizationRoles(
+    request: OrganizationRoleIdRequest,
+  ):
+    | Promise<FetchOrganizationRolesResponse>
+    | Observable<FetchOrganizationRolesResponse>
+    | FetchOrganizationRolesResponse;
+
+  fetchOrganizationRolesCount(
+    request: OrganizationRoleIdRequest,
+  ):
+    | Promise<FetchOrganizationRolesCountResponse>
+    | Observable<FetchOrganizationRolesCountResponse>
+    | FetchOrganizationRolesCountResponse;
 }
 
 export function ProfileServiceControllerMethods() {
@@ -365,6 +435,9 @@ export function ProfileServiceControllerMethods() {
       "updateUserStatus",
       "getUserContacts",
       "updateUser",
+      "createOrUpdateBusinessUserRole",
+      "fetchOrganizationRoles",
+      "fetchOrganizationRolesCount",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

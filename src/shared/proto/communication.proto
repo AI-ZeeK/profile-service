@@ -45,11 +45,14 @@ message SendOtpMailRequest {
   string otp = 3;
   SendOtpType type = 4;
 }
+
 enum SendOtpType {
   REGISTRATION = 0;
   SIGNIN = 1;
+  ADMIN_REGISTRATION = 2;
+  ADMIN_SIGNIN = 3;
+  FORGOT_PASSWORD = 4;
 }
-
 
 message ClearUserPushSubscriptionsRequest {
   string user_id = 1;

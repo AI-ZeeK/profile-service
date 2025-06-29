@@ -76,7 +76,7 @@ export class AuthService {
 
     const access_token = this.jwtService.sign(payload, {
       secret: process.env.JWT_ACCESS_SECRET,
-      expiresIn: '15m',
+      expiresIn: '3h',
     });
 
     const refresh_token = this.jwtService.sign(payload, {
@@ -462,6 +462,7 @@ export class AuthService {
         await this.prisma.verification.delete({
           where: { verification_id: verification.verification_id },
         });
+
         throw new RpcException({
           code: 401,
           message: 'OTP expired',
@@ -484,7 +485,9 @@ export class AuthService {
       const user = await this.userService.findOne({
         user_id: payload.user_id,
       });
-
+      await this.prisma.verification.deleteMany({
+        where: { user_id: payload.user_id },
+      });
       return {
         message: 'OTP verified successfully',
         accessToken: access_token,

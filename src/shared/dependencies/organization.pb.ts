@@ -10,6 +10,58 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "organization";
 
+export interface OrganizationRoleIdRequest {
+  organizationRoleSlug: string;
+  organizationId: string;
+}
+
+export interface Country {
+  countryId: string;
+  countryName: string;
+  countryCode: string;
+  currencyCode: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string;
+}
+
+export interface GetCountriesResponse {
+  success: boolean;
+  error?: string | undefined;
+  countries: Country[];
+}
+
+export interface FetchRolesResponse {
+  success: boolean;
+  error?: string | undefined;
+  organizationRoles: OrganizationRole[];
+}
+
+export interface FetchRoleResponse {
+  success: boolean;
+  error?: string | undefined;
+  organizationRole: OrganizationRole | undefined;
+}
+
+export interface RoleData {
+  organizationRole: OrganizationRole | undefined;
+}
+
+export interface CreateBusinessUserRoleRequest {
+  organizationId: string;
+  roleName: string;
+  description: string;
+  businessUserIds: string[];
+  permissions: Permission[];
+  creatorId: string;
+}
+
+export interface Permission {
+  permissionName: string;
+  state: boolean;
+}
+
 export interface EmptyRequest {
 }
 
@@ -46,6 +98,50 @@ export interface ServiceType {
   isActive: boolean;
 }
 
+export interface BusinessUserRole {
+  businessUserRoleId: string;
+  businessUserId: string;
+  organizationRoleId: string;
+  isActive: boolean;
+  Count: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string;
+}
+
+export interface EntityPermission {
+  entityId: string;
+  entityType: string;
+  permissionId: string;
+  isGranted: boolean;
+  grantedAt: string;
+  grantedByUserId: string;
+  level: number;
+  permission: PermissionResponse | undefined;
+}
+
+export interface PermissionResponse {
+  permissionId: string;
+  permissionName: string;
+  description: string;
+  level: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrganizationRole {
+  roleId: string;
+  organizationId: string;
+  branchId: string;
+  name: string;
+  slug: string;
+  description: string;
+  isActive: boolean;
+  businessUserRolesCount: number;
+  businessUserRoles: BusinessUserRole[];
+  entityPermissions: EntityPermission[];
+}
+
 export interface TableLocation {
   tableLocationId: number;
   name: string;
@@ -80,6 +176,26 @@ export interface GetTableLocationsResponse {
   success: boolean;
   error?: string | undefined;
   tableLocations: TableLocation[];
+}
+
+export interface Company {
+  companyId: string;
+  name: string;
+  description: string;
+  phoneNumber: string;
+  email: string;
+  registrationNumber: string;
+  registrationDate: string;
+  companyLogo: string;
+  isMultiBranch: boolean;
+  mainBranch: MainBranch | undefined;
+  businessTypes: BusinessType[];
+}
+
+export interface FetchCompaniesResponse {
+  success: boolean;
+  error?: string | undefined;
+  companies: Company[];
 }
 
 export interface GetBedSizesResponse {
@@ -120,6 +236,87 @@ export interface CreateRoomLocationRequest {
   name: string;
   organizationId: string;
   creatorId: string;
+}
+
+export interface CreateCompanyRequest {
+  name: string;
+  organizationId: string;
+  creatorId: string;
+  description: string;
+  phoneNumber: string;
+  email: string;
+  registrationNumber: string;
+  registrationDate: string;
+  companyLogo: string;
+  isMultiBranch: boolean;
+  mainBranch: MainBranch | undefined;
+  businessTypes: BusinessType[];
+}
+
+export interface MainBranch {
+  name?: string | undefined;
+  email?: string | undefined;
+  phoneNumber?: string | undefined;
+  address: AddressRequest | undefined;
+}
+
+export interface BusinessHours {
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+}
+
+export interface BusinessType {
+  type?: string | undefined;
+  description?: string | undefined;
+  checkInTime?: string | undefined;
+  checkOutTime?: string | undefined;
+  businessHours: BusinessHours[];
+  restaurantTableTypes: RestaurantTableType[];
+  hotelRoomTypes: HotelRoomType[];
+}
+
+export interface HotelRoomType {
+  name: string;
+  description?: string | undefined;
+  pricePerNight: number;
+  maxOccupancy: number;
+  bedSizeId: number;
+  hotelRooms: HotelRoom[];
+}
+
+export interface HotelRoom {
+  ref: string;
+  description?: string | undefined;
+  locationId: number;
+  isActive?: boolean | undefined;
+}
+
+export interface RestaurantTableType {
+  name?: string | undefined;
+  description?: string | undefined;
+  seatingCapacity?: number | undefined;
+  tables: RestaurantTable[];
+}
+
+export interface RestaurantTable {
+  name?: string | undefined;
+  description?: string | undefined;
+  locationId?: number | undefined;
+}
+
+export interface AddressRequest {
+  street?: string | undefined;
+  building?: string | undefined;
+  city?: string | undefined;
+  district?: string | undefined;
+  country?: string | undefined;
+  landmark?: string | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
+  postalCode?: string | undefined;
+  directionUrl?: string | undefined;
 }
 
 export interface CreateOrganizationRequest {
@@ -171,6 +368,12 @@ export interface OrganizationServiceClient {
 
   validateCompanyReference(request: ValidateCompanyReferenceRequest): Observable<ValidateCompanyReferenceResponse>;
 
+  /** Create Company */
+
+  createCompany(request: CreateCompanyRequest): Observable<UtilitiesResponse>;
+
+  fetchOrganizationCompanies(request: OrganizationIdRequest): Observable<FetchCompaniesResponse>;
+
   /** Delete Utilities */
 
   deleteTableLocation(request: DeleteTableLocationRequest): Observable<UtilitiesResponse>;
@@ -196,6 +399,16 @@ export interface OrganizationServiceClient {
   getBedSizes(request: OrganizationIdRequest): Observable<GetBedSizesResponse>;
 
   getRoomLocations(request: OrganizationIdRequest): Observable<GetRoomLocationsResponse>;
+
+  getCountries(request: EmptyRequest): Observable<GetCountriesResponse>;
+
+  fetchOrgRoles(request: OrganizationIdRequest): Observable<FetchRolesResponse>;
+
+  fetchOrgRole(request: OrganizationRoleIdRequest): Observable<FetchRoleResponse>;
+
+  createBusinessUserRole(request: CreateBusinessUserRoleRequest): Observable<UtilitiesResponse>;
+
+  updateBusinessUserRole(request: CreateBusinessUserRoleRequest): Observable<UtilitiesResponse>;
 }
 
 /** 🏢 Organization Service - handles organization and branch management */
@@ -219,6 +432,16 @@ export interface OrganizationServiceController {
     | Promise<ValidateCompanyReferenceResponse>
     | Observable<ValidateCompanyReferenceResponse>
     | ValidateCompanyReferenceResponse;
+
+  /** Create Company */
+
+  createCompany(
+    request: CreateCompanyRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  fetchOrganizationCompanies(
+    request: OrganizationIdRequest,
+  ): Promise<FetchCompaniesResponse> | Observable<FetchCompaniesResponse> | FetchCompaniesResponse;
 
   /** Delete Utilities */
 
@@ -265,6 +488,26 @@ export interface OrganizationServiceController {
   getRoomLocations(
     request: OrganizationIdRequest,
   ): Promise<GetRoomLocationsResponse> | Observable<GetRoomLocationsResponse> | GetRoomLocationsResponse;
+
+  getCountries(
+    request: EmptyRequest,
+  ): Promise<GetCountriesResponse> | Observable<GetCountriesResponse> | GetCountriesResponse;
+
+  fetchOrgRoles(
+    request: OrganizationIdRequest,
+  ): Promise<FetchRolesResponse> | Observable<FetchRolesResponse> | FetchRolesResponse;
+
+  fetchOrgRole(
+    request: OrganizationRoleIdRequest,
+  ): Promise<FetchRoleResponse> | Observable<FetchRoleResponse> | FetchRoleResponse;
+
+  createBusinessUserRole(
+    request: CreateBusinessUserRoleRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  updateBusinessUserRole(
+    request: CreateBusinessUserRoleRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
 }
 
 export function OrganizationServiceControllerMethods() {
@@ -273,6 +516,8 @@ export function OrganizationServiceControllerMethods() {
       "createOrganization",
       "getOrganization",
       "validateCompanyReference",
+      "createCompany",
+      "fetchOrganizationCompanies",
       "deleteTableLocation",
       "deleteBedSize",
       "deleteRoomLocation",
@@ -283,6 +528,11 @@ export function OrganizationServiceControllerMethods() {
       "getTableLocations",
       "getBedSizes",
       "getRoomLocations",
+      "getCountries",
+      "fetchOrgRoles",
+      "fetchOrgRole",
+      "createBusinessUserRole",
+      "updateBusinessUserRole",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

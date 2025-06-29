@@ -4,9 +4,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ADDRESS_TYPE_ENUM, FILE_ENTITY_TYPE_ENUM, ROLES_ENUM } from '../enum';
 import { PrismaClient as PrismaMainClient } from '@prisma/client';
 import { permissions } from './organization_permissions';
+import { ROLES_ENUM } from '@djengo/proto-contracts';
 
 const prisma = new PrismaMainClient();
 

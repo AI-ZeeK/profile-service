@@ -27,22 +27,22 @@ export class AuthController {
     return this.authService.register(data);
   }
 
-  @GrpcMethod(PROFILE_SERVICE_NAME, 'logout')
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'Logout') // user logout
   async logout(data: LogoutRequest) {
     return this.authService.logout(data);
   }
 
-  @GrpcMethod(PROFILE_SERVICE_NAME, 'sendOtp')
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'SendOtp') // user send otp
   async sendOtp(@Payload() data: SendOtpRequest) {
     return this.authService.sendOtp(data);
   }
 
-  @GrpcMethod(PROFILE_SERVICE_NAME, 'verifyOtp')
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'VerifyOtp') // user verify otp
   async verifyOtp(@Payload() data: VerifyOtpRequest) {
     return this.authService.verifyOtp(data);
   }
 
-  @GrpcMethod(PROFILE_SERVICE_NAME, 'refreshToken')
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'RefreshToken') // user refresh token
   async refreshToken(@Payload() data: RefreshTokenRequest) {
     return this.authService.refreshToken(data);
   }

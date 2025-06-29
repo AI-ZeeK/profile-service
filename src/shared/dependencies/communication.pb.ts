@@ -13,6 +13,9 @@ export const protobufPackage = "communication";
 export enum SendOtpType {
   REGISTRATION = 0,
   SIGNIN = 1,
+  ADMIN_REGISTRATION = 2,
+  ADMIN_SIGNIN = 3,
+  FORGOT_PASSWORD = 4,
   UNRECOGNIZED = -1,
 }
 

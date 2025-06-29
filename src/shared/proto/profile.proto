@@ -7,6 +7,7 @@ package profile;
 
 // 👤 Profile Service - handles user profiles and user management
 service ProfileService {
+  // user services
   rpc Register(RegisterRequest) returns (AuthInitialResponse);
   rpc Login(LoginRequest) returns (AuthInitialResponse);
   rpc SendOtp(SendOtpRequest) returns (SendOtpResponse);
@@ -24,7 +25,26 @@ service ProfileService {
   rpc GetUserContacts(GetUserContactsRequest) returns (GetUserContactsResponse);
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
 
+  // BUSINESS ROLES
+  rpc CreateOrUpdateBusinessUserRole(CreateOrUpdateBusinessUserRoleRequest) returns (CreateOrUpdateBusinessUserRoleResponse);
+
+  rpc FetchOrganizationRoles(OrganizationRoleIdRequest) returns (FetchOrganizationRolesResponse);
+  rpc FetchOrganizationRolesCount(OrganizationRoleIdRequest) returns (FetchOrganizationRolesCountResponse);
 }
+
+
+message OrganizationRoleIdRequest {
+  string organization_role_id = 1;
+}
+
+message FetchOrganizationRolesResponse {
+  repeated Role roles = 1;
+}
+
+message FetchOrganizationRolesCountResponse {
+  int32 count = 1;
+}
+
 
 message CommonResponseArray {
   bool success = 1;
@@ -39,11 +59,30 @@ message CommonResponseArray {
 
 message EmptyRequest {}
 
+message CreateOrUpdateBusinessUserRoleRequest {
+  repeated string business_user_ids = 1;
+  string organization_role_id = 2;
+}
+
+
+
+message CreateOrUpdateBusinessUserRoleResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional string message = 3;
+}
 
 message Role {
   string role_id = 1;
   string role_name = 2;
   bool is_active = 3;
+}
+
+message BusinessUserRole {
+  string business_user_role_id = 1;
+  string business_user_id = 2;
+  string organization_role_id = 3;
+  bool is_active = 4;
 }
 
 message GetRolesResponse {
@@ -100,6 +139,8 @@ message AuthInitialResponse {
   optional string message = 3;
   optional string auth_token = 4;
 }
+  
+
 
 message RegisterRequest {
   string email = 1;
@@ -290,4 +331,7 @@ message UserRole {
 enum SendOtpType {
   REGISTRATION = 0;
   SIGNIN = 1;
+  ADMIN_REGISTRATION = 2;
+  ADMIN_SIGNIN = 3;
+  FORGOT_PASSWORD = 4;
 }

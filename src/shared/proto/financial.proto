@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package financial;
+
+// 📁 Files Service - handles file uploads, storage, and management
+service FinancialService {
+
+  rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
+}
+
+  message CreateCategoryRequest {
+    string name = 1;
+    string description = 2;
+  }
+
+  message CreateCategoryResponse {
+    string id = 1;
+  }
+ 
