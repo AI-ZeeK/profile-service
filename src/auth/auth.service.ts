@@ -305,6 +305,8 @@ export class AuthService {
       },
     });
 
+    this.logger.log('OTP SENT', otp);
+
     await this.communicationService.sendOtp({
       email: email,
       name: name,
@@ -316,7 +318,7 @@ export class AuthService {
       user_id: user_id,
     });
     return { auth_token };
-  }
+  }   
 
   // private async validateCompanyReference(
   //   company_name: string,
@@ -429,7 +431,7 @@ export class AuthService {
           expires_at: Helpers.getFutureTimestamp({ seconds: 95 }),
         },
       });
-
+      this.logger.log('OTP SENT', otp);
       await this.communicationService.sendOtp({
         email: user?.email,
         name: user?.email?.split('@')[0],

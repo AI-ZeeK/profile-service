@@ -1,0 +1,26 @@
+# Development Dockerfile for Profile Service
+FROM node:18
+
+WORKDIR /app
+
+# Configure npm registry for better connectivity
+RUN npm config set registry https://registry.npmjs.org/
+
+# Copy package files and Prisma schema first for better caching
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install ALL dependencies (including dev dependencies for development)
+RUN npm install -g @nestjs/cli && npm install
+
+# Copy source code
+COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Development command - runs with hot reload
+EXPOSE 50051
+
+# Use development command that supports hot reload
+CMD ["npm", "run", "start:dev"]

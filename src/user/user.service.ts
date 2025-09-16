@@ -87,79 +87,79 @@ export class UserService {
       });
     }
   }
-  async findOneAdmin<T extends Prisma.UserInclude>(
-    where: Prisma.PlatformUserWhereUniqueInput,
-    include?: T,
-    sample_data?: boolean,
-  ) {
-    try {
-      const userData = await this.prisma.platformUser.findUnique({
-        where,
-        include: {
-          ...include,
-        },
-      });
+  // async findOneAdmin<T extends Prisma.UserInclude>(
+  //   where: Prisma.PlatformUserWhereUniqueInput,
+  //   include?: T,
+  //   sample_data?: boolean,
+  // ) {
+  //   try {
+  //     const userData = await this.prisma.platformUser.findUnique({
+  //       where,
+  //       include: {
+  //         ...include,
+  //       },
+  //     });
 
-      if (!userData) {
-        return null;
-      }
+  //     if (!userData) {
+  //       return null;
+  //     }
 
-      const address = await this.addressService.verifyAddress({
-        entityType: ADDRESS_TYPE_ENUM.USER_HOME,
-        entityId: userData.user_id,
-      });
+  //     const address = await this.addressService.verifyAddress({
+  //       entityType: ADDRESS_TYPE_ENUM.USER_HOME,
+  //       entityId: userData.user_id,
+  //     });
 
-      const avatarFile = await this.filesService.verifyFile({
-        entityType: FILE_ENTITY_TYPE_ENUM.PLATFORM_USER_AVATAR,
-        entityId: userData.user_id,
-      });
+  //     const avatarFile = await this.filesService.verifyFile({
+  //       entityType: FILE_ENTITY_TYPE_ENUM.PLATFORM_USER_AVATAR,
+  //       entityId: userData.user_id,
+  //     });
 
-      return {
-        ...userData,
-        address,
-        avatar_url: avatarFile?.fileUrl || null,
-      };
-    } catch (error) {
-      throw new RpcException({
-        code: 500,
-        message: error.message,
-      });
-    }
-  }
+  //     return {
+  //       ...userData,
+  //       address,
+  //       avatar_url: avatarFile?.fileUrl || null,
+  //     };
+  //   } catch (error) {
+  //     throw new RpcException({
+  //       code: 500,
+  //       message: error.message,
+  //     });
+  //   }
+  // }
 
-  async fetchAllAdmin() {
-    try {
-      const users = await this.prisma.platformUser.findMany({
-        include: {
-          role: true,
-        },
-      });
-      return {
-        success: true,
-        message: 'Users fetched successfully',
-        users: users,
-      };
-    } catch (error) {
-      throw new RpcException({
-        code: 500,
-        message: error.message,
-      });
-    }
-  }
+  // async fetchAllAdmin() {
+  //   try {
+  //     const users = await this.prisma.platformUser.findMany({
+  //       include: {
+  //         role: true,
+  //       },
+  //     });
+  //     return {
+  //       success: true,
+  //       message: 'Users fetched successfully',
+  //       users: users,
+  //     };
+  //   } catch (error) {
+  //     throw new RpcException({
+  //       code: 500,
+  //       message: error.message,
+  //     });
+  //   }
+  // }
 
-  async fetchAdminAccount({ user_id }: { user_id: string }) {
-    try {
-      const users = await this.findOneAdmin({
-        user_id: user_id,
-      });
-      return users;
-    } catch (error) {
-      throw new RpcException({
-        code: 500,
-        message: error.message,
-      });
-    }
-  }
+  // async fetchAdminAccount({ user_id }: { user_id: string }) {
+  //   try {
+  //     const users = await this.findOneAdmin({
+  //       user_id: user_id,
+  //     });
+  //     return users;
+  //   } catch (error) {
+  //     throw new RpcException({
+  //       code: 500,
+  //       message: error.message,
+  //     });
+  //   }
+  // }
   async fetchByEmail({ email }: { email: string }) {
     try {
       const user = await this.prisma.user.findUnique({
