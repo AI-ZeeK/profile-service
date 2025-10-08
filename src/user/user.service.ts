@@ -14,12 +14,14 @@ import { Logger } from '@nestjs/common';
 import {
   GetUserRequest,
   UpdateUserRequest,
+  ValidateAccountRequest,
 } from 'src/shared/dependencies/profile.pb';
 import { RpcException } from '@nestjs/microservices';
 import {
   ADDRESS_TYPE_ENUM,
   FILE_ENTITY_TYPE_ENUM,
 } from '@djengo/proto-contracts';
+import { JwtService } from '@nestjs/jwt';
 
 type UserWithAvatar<T = {}> = User & {
   avatar_url: string | null;
@@ -33,6 +35,7 @@ export class UserService {
     private prisma: PrismaService,
     private filesService: FilesService,
     private addressService: AddressService,
+    private jwtService: JwtService,
   ) {}
   async findOne<T extends Prisma.UserInclude>(
     where: Prisma.UserWhereUniqueInput,
@@ -80,6 +83,38 @@ export class UserService {
         user_role: user_role,
         business_user: business_user,
       };
+    } catch (error) {
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
+    }
+  }
+
+  async validateAccount({ token }: ValidateAccountRequest) {
+    try {
+      this.logger.log('HITTING THIS ENDPOINT', token);
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: process.env.JWT_ADMIN_ACCESS_SECRET,
+      });
+
+      if (!payload) {
+        throw new RpcException('Invalid token');
+      }
+      const user = await this.findOne({
+        user_id: payload.user_id,
+      });
+      if (!user) {
+        this.logger.error('no user', user);
+        throw new RpcException({
+          code: 500,
+          message: 'User not found',
+        });
+      }
+      this.logger.log('user', user);
+
+      console.log('USER VALID,user', user);
+      return { success: true, user };
     } catch (error) {
       throw new RpcException({
         code: 500,

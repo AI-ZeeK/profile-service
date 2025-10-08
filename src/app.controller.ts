@@ -7,6 +7,7 @@ import {
   GetUserRequest,
   UpdateUserRequest,
   CreateOrUpdateBusinessUserRoleRequest,
+  ValidateAccountRequest,
 } from './shared/dependencies/profile.pb';
 import { BusinessUserService } from './user/business-user.service';
 
@@ -35,6 +36,11 @@ export class AppController {
     return await this.userService.fetchByEmail({
       email: data.email,
     });
+  }
+
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'ValidateAccount')
+  async validateAccount(data: ValidateAccountRequest) {
+    return this.userService.validateAccount(data);
   }
 
   @GrpcMethod(PROFILE_SERVICE_NAME, 'CreateOrUpdateBusinessUserRole')

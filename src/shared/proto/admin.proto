@@ -15,6 +15,7 @@ service AdminService {
   rpc AdminRefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
   rpc FetchAllAdmin(EmptyRequest) returns (FetchAllAdminResponse);
   rpc FetchAdminAccount(FetchAdminAccountRequest) returns (FetchAdminAccountResponse);
+  rpc ValidateAdminAccount(ValidateAdminAccountRequest) returns (FetchAdminAccountResponse);
 
   rpc GetUser(GetUserRequest) returns (UserResponse);
  
@@ -27,9 +28,14 @@ message FetchAllAdminResponse {
 message FetchAdminAccountRequest {
   string user_id = 1;
 }
+message ValidateAdminAccountRequest {
+  string token = 1;
+}
 
 message FetchAdminAccountResponse {
   User user = 1;
+  bool success = 2;
+  string message = 3;
 }
 
 
