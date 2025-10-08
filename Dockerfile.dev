@@ -1,7 +1,11 @@
 # Development Dockerfile for Profile Service
-FROM node:18
+FROM node:22-bullseye
 
 WORKDIR /app
+
+# Install PostgreSQL client (for pg_isready)
+RUN apt-get update && apt-get install -y postgresql-client
+
 
 # Configure npm registry for better connectivity
 RUN npm config set registry https://registry.npmjs.org/
@@ -19,8 +23,14 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Note: Migrations and seeding will be handled at runtime via docker-entrypoint.sh
+
 # Development command - runs with hot reload
 EXPOSE 50051
 
-# Use development command that supports hot reload
-CMD ["npm", "run", "start:dev"]
+# Copy and set up the entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Use the entrypoint script
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

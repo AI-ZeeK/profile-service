@@ -24,6 +24,7 @@ export class OrganizationsService {
   }
 
   async createOrganization(data: CreateOrganizationRequest) {
+    console.log('CREATE ORG SERVICE - Full Request:', JSON.stringify(data));
     return await firstValueFrom(
       this.organizationService.createOrganization(data),
     );
@@ -38,4 +39,6 @@ export class OrganizationsService {
   async getOrganization(data: GetOrganizationRequest) {
     return await firstValueFrom(this.organizationService.getOrganization(data));
   }
+
+  async deleteOrganization(user: string) {}
 }

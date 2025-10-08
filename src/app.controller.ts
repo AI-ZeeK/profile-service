@@ -44,10 +44,10 @@ export class AppController {
     return await this.businessUserService.createOrUpdateBusinessUserRole(data);
   }
 
-  @GrpcMethod(PROFILE_SERVICE_NAME, 'FetchAllAdmin')
-  async fetchAllAdmin() {
-    return await this.userService.fetchAllAdmin();
-  }
+  // @GrpcMethod(PROFILE_SERVICE_NAME, 'FetchAllAdmin')
+  // async fetchAllAdmin() {
+  //   return await this.userService.fetchAllAdmin();
+  // }
 
   // @GrpcMethod(PROFILE_SERVICE_NAME, 'UpdateUserStatus')
   // async updateUserStatus(data: UpdateUserStatusRequest) {

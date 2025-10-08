@@ -13,7 +13,9 @@ import { ADDRESS_PACKAGE_NAME } from 'src/shared/dependencies/address.pb';
         options: {
           package: ADDRESS_PACKAGE_NAME,
           protoPath: join(process.cwd(), 'src/shared/proto/address.proto'),
-          url: `${process.env.GRPC_HOST}:${process.env.ADDRESS_SERVICE_PORT}`,
+          url:
+            process.env.ADDRESS_SERVICE_URL ||
+            `0.0.0.0:${process.env.ADDRESS_SERVICE_PORT}`,
         },
       },
     ]),

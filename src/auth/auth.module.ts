@@ -4,9 +4,16 @@ import { AuthController } from './auth.controller';
 import { JwtService } from '@nestjs/jwt';
 import { UserModule } from 'src/user/user.module';
 import { SharedModule } from 'src/modules/shared.module';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
-  imports: [forwardRef(() => UserModule), forwardRef(() => SharedModule)],
+  imports: [
+    forwardRef(() => UserModule),
+    forwardRef(() => SharedModule),
+    BullModule.registerQueue({
+      name: 'organization',
+    }),
+  ],
   controllers: [AuthController],
   providers: [AuthService, JwtService],
   exports: [AuthService, JwtService],

@@ -24,11 +24,14 @@ import {
 } from 'src/shared/dependencies/profile.pb';
 import { RpcException } from '@nestjs/microservices';
 import { Helpers } from '@djengo/proto-contracts';
+import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   constructor(
+    @InjectQueue('organization') private orgQueue: Queue,
     private jwtService: JwtService,
     private prisma: PrismaService,
     private userService: UserService,
@@ -205,45 +208,25 @@ export class AuthService {
       });
 
       if (ROLES_ENUM.BUSINESS_USER === role.role_name) {
-        let organization;
-        try {
-          organization = await this.organizationService.createOrganization({
+        console.log('CREATING ORG FOR USER', user.user_id);
+
+        await this.orgQueue.add(
+          'create_organization',
+          {
             organizationName: '',
             phoneNumber: '',
             email: '',
             registrationNumber: '',
             registrationDate: '',
-            creatorId: user.user_id,
-          });
-        } catch (error) {
-          console.log('ERROR', error);
-          await this.prisma.user.delete({
-            where: {
-              user_id: user.user_id,
-            },
-          });
-          throw new RpcException({
-            code: 400,
-            message: error.message,
-          });
-        }
-        console.log('ORGANIZATION', organization);
-        if (!organization?.success)
-          throw new RpcException({
-            code: 400,
-            message: 'organization not created',
-          });
-
-        await this.prisma.businessUser.create({
-          data: {
-            user_id: user.user_id,
-            organization_id: organization?.organizationId || '',
-            // access_type: BusinessAccessType.CREATOR,
-            access_level: 1,
-            is_active: true,
-            email: user.email,
           },
-        });
+          {
+            attempts: 3, // retry 3 times
+            backoff: {
+              type: 'exponential',
+              delay: 5000, // 5 seconds, then 10, then 20
+            },
+          },
+        );
       }
       if (ROLES_ENUM.STAFF === role.role_name) {
         const company = await this.organizationService.validateCompanyReference(
@@ -307,18 +290,18 @@ export class AuthService {
 
     this.logger.log('OTP SENT', otp);
 
-    await this.communicationService.sendOtp({
-      email: email,
-      name: name,
-      otp,
-      type: type,
-    });
+    // await this.communicationService.sendOtp({
+    //   email: email,
+    //   name: name,
+    //   otp,
+    //   type: type,
+    // });
 
     const { auth_token } = await this.generateAuthToken({
       user_id: user_id,
     });
     return { auth_token };
-  }   
+  }
 
   // private async validateCompanyReference(
   //   company_name: string,
@@ -376,6 +359,7 @@ export class AuthService {
         authToken: auth_token,
       };
     } catch (error) {
+      this.logger.error('Login error', error);
       throw new RpcException({
         code: 500,
         message: error.message,

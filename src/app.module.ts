@@ -12,7 +12,7 @@ import { RolesModule } from './roles/roles.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: ['.env', 'local.env'],
     }),
 
     PrismaModule,

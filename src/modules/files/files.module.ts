@@ -13,7 +13,9 @@ import { FILES_PACKAGE_NAME } from 'src/shared/dependencies/files.pb';
         options: {
           package: FILES_PACKAGE_NAME,
           protoPath: join(process.cwd(), 'src/shared/proto/files.proto'),
-          url: `${process.env.GRPC_HOST}:${process.env.FILES_SERVICE_PORT}`,
+          url:
+            process.env.FILES_SERVICE_URL ||
+            `0.0.0.0:${process.env.FILES_SERVICE_PORT}`,
         },
       },
     ]),
