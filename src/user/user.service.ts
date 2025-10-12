@@ -95,7 +95,7 @@ export class UserService {
     try {
       this.logger.log('HITTING THIS ENDPOINT', token);
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_ADMIN_ACCESS_SECRET,
+        secret: process.env.JWT_ACCESS_SECRET,
       });
 
       if (!payload) {
