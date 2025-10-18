@@ -13,7 +13,7 @@ export class BusinessUserProcessor {
   @Process('create_business_user')
   async handleCreateBusinessUser(job: Job) {
     const data = job.data;
-    console.log('👤 Creating business user for:', data.user_id);
+    // console.log('👤 Creating business user for:', data.user_id);
     try {
       await this.prisma.businessUser.create({
         data: {
@@ -25,10 +25,18 @@ export class BusinessUserProcessor {
         },
       });
     } catch (error) {
-      console.error('Business user failed, rolling back org...');
+      // console.error(
+      //   'Business user failed, rolling back org...',
+      //   job.name,
+      //   data,
+      // );
       await this.organizationService.deleteOrganization(data.organization_id);
+      await this.prisma.user.delete({
+        where: { user_id: data.user_id },
+      });
+      // console.error('Error creating business user:', error);
       throw error;
     }
-    console.log('✅ Business user created successfully.');
+    // console.log('✅ Business user created successfully.');
   }
 }

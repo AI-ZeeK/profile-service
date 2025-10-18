@@ -55,6 +55,7 @@ export class BusinessUserService {
         success: true,
         business_user: businessUser,
         organization: organization.organization,
+        company: organization?.company,
       };
     } catch (error) {
       throw new BadRequestException(error.message);

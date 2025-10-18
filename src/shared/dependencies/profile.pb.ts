@@ -200,6 +200,7 @@ export interface BusinessUserResponse {
   error?: string | undefined;
   businessUser?: BusinessUser | undefined;
   organization?: Organization | undefined;
+  company?: Company | undefined;
 }
 
 export interface UserResponse {
@@ -282,6 +283,8 @@ export interface Organization {
   email: string;
   registrationNumber: string;
   registrationDate: string;
+  isActive: boolean;
+  isMultiCompany: boolean;
   creatorId: string;
   createdAt: string;
   updatedAt: string;
@@ -308,6 +311,60 @@ export interface UserRole {
   userRoleId: string;
   roleName: string;
   isActive: boolean;
+}
+
+export interface Company {
+  companyId: string;
+  organizationId: string;
+  referenceId: string;
+  email: string;
+  name: string;
+  registrationDate: string;
+  isActive: boolean;
+  registrationNumber: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | undefined;
+  companyMetaData: CompanyMetaData | undefined;
+  branches: Branch[];
+}
+
+export interface CompanyMetaData {
+  companyId: string;
+  staffCount: string;
+  branchCount: string;
+  isMultiBranch: boolean;
+}
+
+export interface Branch {
+  branchId: string;
+  companyId: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  address: AddressRequest | undefined;
+  isMainBranch: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | undefined;
+  creatorId?: string | undefined;
+}
+
+export interface AddressRequest {
+  addressId?: string | undefined;
+  street?: string | undefined;
+  building?: string | undefined;
+  apartment?: string | undefined;
+  district?: string | undefined;
+  city?: string | undefined;
+  state?: string | undefined;
+  postalCode?: string | undefined;
+  country?: string | undefined;
+  landmark?: string | undefined;
+  directionUrl?: string | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
 }
 
 export const PROFILE_PACKAGE_NAME = "profile";

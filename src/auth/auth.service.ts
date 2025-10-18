@@ -197,7 +197,7 @@ export class AuthService {
         data: {
           email: email.toLowerCase(),
           password: hashed_password, // Store the hashed password
-          phone_number: phoneNumber,
+          ...(phoneNumber ? { phone_number: phoneNumber } : {}),
           user_roles: {
             create: {
               role_name: role.role_name!,
@@ -208,16 +208,17 @@ export class AuthService {
       });
 
       if (ROLES_ENUM.BUSINESS_USER === role.role_name) {
-        console.log('CREATING ORG FOR USER', user.user_id);
+        // console.log('CREATING ORG FOR USER', user.user_id);
 
         await this.orgQueue.add(
           'create_organization',
           {
             organizationName: '',
             phoneNumber: '',
-            email: '',
+            email: user.email || '',
             registrationNumber: '',
             registrationDate: '',
+            creatorId: user.user_id,
           },
           {
             attempts: 3, // retry 3 times
@@ -227,6 +228,7 @@ export class AuthService {
             },
           },
         );
+        console.log('QUEUED ORG FOR USER', user.user_id);
       }
       if (ROLES_ENUM.STAFF === role.role_name) {
         const company = await this.organizationService.validateCompanyReference(

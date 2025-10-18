@@ -178,20 +178,6 @@ export interface GetTableLocationsResponse {
   tableLocations: TableLocation[];
 }
 
-export interface Company {
-  companyId: string;
-  name: string;
-  description: string;
-  phoneNumber: string;
-  email: string;
-  registrationNumber: string;
-  registrationDate: string;
-  companyLogo: string;
-  isMultiBranch: boolean;
-  mainBranch: MainBranch | undefined;
-  businessTypes: BusinessType[];
-}
-
 export interface FetchCompaniesResponse {
   success: boolean;
   error?: string | undefined;
@@ -307,16 +293,19 @@ export interface RestaurantTable {
 }
 
 export interface AddressRequest {
+  addressId?: string | undefined;
   street?: string | undefined;
   building?: string | undefined;
-  city?: string | undefined;
+  apartment?: string | undefined;
   district?: string | undefined;
+  city?: string | undefined;
+  state?: string | undefined;
+  postalCode?: string | undefined;
   country?: string | undefined;
   landmark?: string | undefined;
+  directionUrl?: string | undefined;
   latitude?: number | undefined;
   longitude?: number | undefined;
-  postalCode?: string | undefined;
-  directionUrl?: string | undefined;
 }
 
 export interface CreateOrganizationRequest {
@@ -336,6 +325,7 @@ export interface OrganizationResponse {
   success: boolean;
   error?: string | undefined;
   organization: Organization | undefined;
+  company: Company | undefined;
   organizationId: string;
   message: string;
 }
@@ -347,10 +337,50 @@ export interface Organization {
   email: string;
   registrationNumber: string;
   registrationDate: string;
+  isActive: boolean;
+  isMultiCompany: boolean;
   creatorId: string;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | undefined;
+}
+
+export interface Company {
+  companyId: string;
+  organizationId: string;
+  referenceId: string;
+  email: string;
+  name: string;
+  registrationDate: string;
+  isActive: boolean;
+  registrationNumber: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | undefined;
+  companyMetaData: CompanyMetaData | undefined;
+  branches: Branch[];
+}
+
+export interface CompanyMetaData {
+  companyId: string;
+  staffCount: string;
+  branchCount: string;
+  isMultiBranch: boolean;
+}
+
+export interface Branch {
+  branchId: string;
+  companyId: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  address: AddressRequest | undefined;
+  isMainBranch: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | undefined;
+  creatorId?: string | undefined;
 }
 
 export const ORGANIZATION_PACKAGE_NAME = "organization";

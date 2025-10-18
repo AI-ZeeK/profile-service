@@ -28,6 +28,8 @@ export enum SendOtpType {
 
 export interface FetchAllAdminResponse {
   users: User[];
+  success: boolean;
+  message: string;
 }
 
 export interface FetchAdminAccountRequest {
@@ -226,7 +228,7 @@ export interface AdminServiceClient {
 
   adminRefreshToken(request: RefreshTokenRequest): Observable<RefreshTokenResponse>;
 
-  fetchAllAdmin(request: EmptyRequest): Observable<FetchAllAdminResponse>;
+  fetchAllAdmin(request: FetchAdminAccountRequest): Observable<FetchAllAdminResponse>;
 
   fetchAdminAccount(request: FetchAdminAccountRequest): Observable<FetchAdminAccountResponse>;
 
@@ -261,7 +263,7 @@ export interface AdminServiceController {
   ): Promise<RefreshTokenResponse> | Observable<RefreshTokenResponse> | RefreshTokenResponse;
 
   fetchAllAdmin(
-    request: EmptyRequest,
+    request: FetchAdminAccountRequest,
   ): Promise<FetchAllAdminResponse> | Observable<FetchAllAdminResponse> | FetchAllAdminResponse;
 
   fetchAdminAccount(

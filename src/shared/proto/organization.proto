@@ -215,19 +215,7 @@ message GetTableLocationsResponse {
   repeated TableLocation table_locations = 3;
 }
 
-message Company {
-  string company_id = 1;
-  string name = 2;
-  string description = 3;
-  string phone_number = 4;
-  string email = 5; 
-  string registration_number = 6;
-  string registration_date = 7;
-  string company_logo = 8;
-  bool is_multi_branch = 9;
-  MainBranch main_branch = 10;
-  repeated BusinessType business_types = 11;
-}
+
 
 message FetchCompaniesResponse {
   bool success = 1;
@@ -352,16 +340,19 @@ message RestaurantTable {
 }
 
 message AddressRequest {
-  optional string street = 1;
-  optional string building = 2;
-  optional string city = 3;
-  optional string district = 4;
-  optional string country = 5;
-  optional string landmark = 6;
-  optional int32 latitude = 7;
-  optional int32 longitude = 8;
-  optional string postal_code = 9;
-  optional string direction_url = 10;
+  optional string address_id = 1;
+  optional string street = 2;
+  optional string building = 3;
+  optional string apartment = 4;
+  optional string district = 5;
+  optional string city = 6;
+  optional string state = 7;
+  optional string postal_code = 8;
+  optional string country = 9;
+  optional string landmark = 10;
+  optional string direction_url = 11;
+  optional double latitude = 12;
+  optional double longitude = 13;
 }
   
 
@@ -385,8 +376,9 @@ message OrganizationResponse {
   bool success = 1;
   optional string error = 2;
   Organization organization = 3;
-  string organization_id = 4;
-  string message = 5;  
+  Company company = 4;
+  string organization_id = 5;
+  string message = 6;  
 }
 
 
@@ -399,8 +391,64 @@ message Organization {
   string email = 4;
   string registration_number = 5;
   string registration_date = 6;
-  string creator_id = 7;
-  string created_at = 8;
-  string updated_at = 9;
-  optional string deleted_at = 10;
+  bool is_active = 7;
+  bool is_multi_company = 8;
+  string creator_id = 9;
+  string created_at = 10;
+  string updated_at = 11;
+  optional string deleted_at = 12;
 }
+
+message Company {
+  string company_id = 1;
+  string organization_id = 2;
+  string reference_id = 3;
+  string email = 4;
+  string name = 5;
+  string registration_date = 6;
+  bool is_active = 7;
+  string registration_number = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  optional string deleted_at = 11;  
+  CompanyMetaData company_meta_data = 12;
+  repeated Branch branches = 13;
+}
+
+
+message CompanyMetaData {
+  string company_id = 1;
+  string staff_count = 2;
+  string branch_count = 3;
+  bool is_multi_branch = 4;
+
+}
+
+message Branch {
+  string branch_id = 1;
+  string company_id = 2;
+  string name = 3;
+  string email = 4;
+  string phone_number = 5;
+  AddressRequest address = 6;
+  bool is_main_branch = 7;
+  bool is_active = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  optional string deleted_at = 11;
+  optional string creator_id = 12;
+}
+
+// message Company {
+//   string company_id = 1;
+//   string name = 2;
+//   string description = 3;
+//   string phone_number = 4;
+//   string email = 5; 
+//   string registration_number = 6;
+//   string registration_date = 7;
+//   string company_logo = 8;
+//   bool is_multi_branch = 9;
+//   MainBranch main_branch = 10;
+//   repeated BusinessType business_types = 11;
+// }

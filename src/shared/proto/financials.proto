@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+option csharp_namespace = "Financials.Grpc";
+
+package financials;
+
+service FinancialsService {
+  rpc CreateWallet (CreateWalletRequest) returns (WalletReply);
+  rpc UpdateWallet (UpdateWalletRequest) returns (WalletReply);
+  rpc Credit (WalletTransactionRequest) returns (WalletReply);
+  rpc Debit (WalletTransactionRequest) returns (WalletReply);
+  rpc Transfer (WalletTransferRequest) returns (WalletReply);
+}
+
+message CreateWalletRequest {
+  string entity_id = 1;
+  WALLET_ENTITY_TYPE_ENUM entity_type = 2;
+  string currency_code = 3;
+}
+
+message UpdateWalletRequest {
+  string entity_id = 1;
+  string entity_type = 2;
+  string currency_code = 3;
+  double balance = 4;
+}
+
+message WalletTransactionRequest {
+  string wallet_id = 1;
+  double amount = 2;
+  string description = 3;
+  string kind = 4; // "credit" or "debit"
+}
+
+message WalletTransferRequest {
+  string from_entity_type = 1;
+  string from_entity_id = 2;
+  string currency_code = 3;
+  string to_entity_type = 4;
+  string to_entity_id = 5;
+  double amount = 6;
+  string description = 7;
+}
+
+message WalletReply {
+  bool success = 1;
+  string message = 2;
+  Wallet wallet = 3;
+}
+
+message Wallet {
+  string wallet_id = 1;
+  string entity_id = 2;
+  string entity_type = 3;
+  string currency_code = 4;
+  double balance = 5;
+  string status = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+enum WALLET_ENTITY_TYPE_ENUM
+    {
+        ORGANIZATION = 0;
+        COMPANY = 1;
+        BRANCH = 2;
+        ADMIN = 3;
+        USER = 4;
+    } 

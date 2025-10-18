@@ -225,6 +225,7 @@ message BusinessUserResponse {
   optional string error = 2;
   optional BusinessUser business_user = 3;
   optional Organization organization = 4;
+  optional Company company = 5;
 }
 
 message UserResponse {
@@ -309,10 +310,12 @@ message Organization {
   string email = 4;
   string registration_number = 5;
   string registration_date = 6;
-  string creator_id = 7;
-  string created_at = 8;
-  string updated_at = 9;
-  optional string deleted_at = 10;
+  bool is_active = 7;
+  bool is_multi_company = 8;
+  string creator_id = 9;
+  string created_at = 10;
+  string updated_at = 11;
+  optional string deleted_at = 12;
 }
 
 message Address {
@@ -346,3 +349,58 @@ enum SendOtpType {
   ADMIN_SIGNIN = 3;
   FORGOT_PASSWORD = 4;
 }
+message Company {
+  string company_id = 1;
+  string organization_id = 2;
+  string reference_id = 3;
+  string email = 4;
+  string name = 5;
+  string registration_date = 6;
+  bool is_active = 7;
+  string registration_number = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  optional string deleted_at = 11;  
+  CompanyMetaData company_meta_data = 12;
+  repeated Branch branches = 13;
+}
+
+
+message CompanyMetaData {
+  string company_id = 1;
+  string staff_count = 2;
+  string branch_count = 3;
+  bool is_multi_branch = 4;
+
+}
+
+message Branch {
+  string branch_id = 1;
+  string company_id = 2;
+  string name = 3;
+  string email = 4;
+  string phone_number = 5;
+  AddressRequest address = 6;
+  bool is_main_branch = 7;
+  bool is_active = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  optional string deleted_at = 11;
+  optional string creator_id = 12;
+}
+message AddressRequest {
+  optional string address_id = 1;
+  optional string street = 2;
+  optional string building = 3;
+  optional string apartment = 4;
+  optional string district = 5;
+  optional string city = 6;
+  optional string state = 7;
+  optional string postal_code = 8;
+  optional string country = 9;
+  optional string landmark = 10;
+  optional string direction_url = 11;
+  optional double latitude = 12;
+  optional double longitude = 13;
+}
+  
