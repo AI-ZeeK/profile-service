@@ -10,26 +10,47 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "organization";
 
+export interface UpdateCompanyDetailsRequest {
+  companyId: string;
+  name: string;
+  phoneNumber: string;
+  email: string;
+  registrationNumber: string;
+  registrationDate: string;
+  countryCode: string;
+  companyLogo: string;
+  baseCurrency: string;
+  address?: AddressRequest | undefined;
+}
+
 export interface OrganizationRoleIdRequest {
   organizationRoleSlug: string;
   organizationId: string;
 }
 
-export interface Country {
-  countryId: string;
-  countryName: string;
-  countryCode: string;
-  currencyCode: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string;
+export interface FetchCompanyRequest {
+  companyId: string;
 }
 
-export interface GetCountriesResponse {
+export interface FetchCompanyResponse {
   success: boolean;
   error?: string | undefined;
-  countries: Country[];
+  company: Company | undefined;
+  message: string;
+}
+
+export interface FetchBranchResponse {
+  success: boolean;
+  error?: string | undefined;
+  branch: Branch | undefined;
+  message: string;
+}
+
+export interface FetchBranchesResponse {
+  success: boolean;
+  error?: string | undefined;
+  branches: Branch[];
+  message: string;
 }
 
 export interface FetchRolesResponse {
@@ -65,24 +86,6 @@ export interface Permission {
 export interface EmptyRequest {
 }
 
-export interface DeleteTableLocationRequest {
-  tableLocationId: number;
-}
-
-export interface DeleteBedSizeRequest {
-  bedSizeId: number;
-}
-
-export interface DeleteRoomLocationRequest {
-  roomLocationId: number;
-}
-
-export interface GetServiceTypesResponse {
-  success: boolean;
-  error?: string | undefined;
-  serviceTypes: ServiceType[];
-}
-
 export interface BranchIdRequest {
   branchId: string;
 }
@@ -98,6 +101,7 @@ export interface ServiceType {
   isActive: boolean;
 }
 
+/** � RESPONSE MESSAGES */
 export interface BusinessUserRole {
   businessUserRoleId: string;
   businessUserId: string;
@@ -142,58 +146,16 @@ export interface OrganizationRole {
   entityPermissions: EntityPermission[];
 }
 
-export interface TableLocation {
-  tableLocationId: number;
-  name: string;
-  description: string;
-  isGlobal: boolean;
-  isActive: boolean;
-}
-
-export interface RoomLocation {
-  roomLocationId: number;
-  name: string;
-  description: string;
-  isGlobal: boolean;
-  isActive: boolean;
-}
-
 export interface UtilitiesResponse {
   success: boolean;
   error?: string | undefined;
   message: string;
 }
 
-export interface BedSize {
-  bedSizeId: number;
-  name: string;
-  description: string;
-  isGlobal: boolean;
-  isActive: boolean;
-}
-
-export interface GetTableLocationsResponse {
-  success: boolean;
-  error?: string | undefined;
-  tableLocations: TableLocation[];
-}
-
 export interface FetchCompaniesResponse {
   success: boolean;
   error?: string | undefined;
   companies: Company[];
-}
-
-export interface GetBedSizesResponse {
-  success: boolean;
-  error?: string | undefined;
-  bedSizes: BedSize[];
-}
-
-export interface GetRoomLocationsResponse {
-  success: boolean;
-  error?: string | undefined;
-  roomLocations: RoomLocation[];
 }
 
 export interface ValidateCompanyReferenceRequest {
@@ -204,24 +166,6 @@ export interface ValidateCompanyReferenceResponse {
   success: boolean;
   error?: string | undefined;
   companyId: string;
-}
-
-export interface CreateTableLocationRequest {
-  name: string;
-  organizationId: string;
-  creatorId: string;
-}
-
-export interface CreateBedSizeRequest {
-  name: string;
-  organizationId: string;
-  creatorId: string;
-}
-
-export interface CreateRoomLocationRequest {
-  name: string;
-  organizationId: string;
-  creatorId: string;
 }
 
 export interface CreateCompanyRequest {
@@ -235,8 +179,8 @@ export interface CreateCompanyRequest {
   registrationDate: string;
   companyLogo: string;
   isMultiBranch: boolean;
+  /** repeated BusinessType business_types = 12; */
   mainBranch: MainBranch | undefined;
-  businessTypes: BusinessType[];
 }
 
 export interface MainBranch {
@@ -244,52 +188,6 @@ export interface MainBranch {
   email?: string | undefined;
   phoneNumber?: string | undefined;
   address: AddressRequest | undefined;
-}
-
-export interface BusinessHours {
-  dayOfWeek: string;
-  startTime: string;
-  endTime: string;
-  isActive: boolean;
-}
-
-export interface BusinessType {
-  type?: string | undefined;
-  description?: string | undefined;
-  checkInTime?: string | undefined;
-  checkOutTime?: string | undefined;
-  businessHours: BusinessHours[];
-  restaurantTableTypes: RestaurantTableType[];
-  hotelRoomTypes: HotelRoomType[];
-}
-
-export interface HotelRoomType {
-  name: string;
-  description?: string | undefined;
-  pricePerNight: number;
-  maxOccupancy: number;
-  bedSizeId: number;
-  hotelRooms: HotelRoom[];
-}
-
-export interface HotelRoom {
-  ref: string;
-  description?: string | undefined;
-  locationId: number;
-  isActive?: boolean | undefined;
-}
-
-export interface RestaurantTableType {
-  name?: string | undefined;
-  description?: string | undefined;
-  seatingCapacity?: number | undefined;
-  tables: RestaurantTable[];
-}
-
-export interface RestaurantTable {
-  name?: string | undefined;
-  description?: string | undefined;
-  locationId?: number | undefined;
 }
 
 export interface AddressRequest {
@@ -330,6 +228,7 @@ export interface OrganizationResponse {
   message: string;
 }
 
+/** 🏗️ DATA MODELS */
 export interface Organization {
   organizationId: string;
   name: string;
@@ -354,10 +253,15 @@ export interface Company {
   registrationDate: string;
   isActive: boolean;
   registrationNumber: string;
+  companyLogo: string;
+  baseCurrency: string;
+  countryCode: string;
+  phoneNumber: string;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | undefined;
   companyMetaData: CompanyMetaData | undefined;
+  mainBranch: Branch | undefined;
   branches: Branch[];
 }
 
@@ -404,33 +308,25 @@ export interface OrganizationServiceClient {
 
   fetchOrganizationCompanies(request: OrganizationIdRequest): Observable<FetchCompaniesResponse>;
 
-  /** Delete Utilities */
+  fetchCompany(request: FetchCompanyRequest): Observable<FetchCompanyResponse>;
 
-  deleteTableLocation(request: DeleteTableLocationRequest): Observable<UtilitiesResponse>;
+  handleMultiBranchCompanySetup(request: FetchCompanyRequest): Observable<UtilitiesResponse>;
 
-  deleteBedSize(request: DeleteBedSizeRequest): Observable<UtilitiesResponse>;
+  updateCompanyDetails(request: UpdateCompanyDetailsRequest): Observable<UtilitiesResponse>;
 
-  deleteRoomLocation(request: DeleteRoomLocationRequest): Observable<UtilitiesResponse>;
+  /**
+   * Create Branch
+   * rpc CreateBranch(CreateBranchRequest) returns (UtilitiesResponse);
+   */
 
-  /** CREATE UTILITIES */
+  fetchBranch(request: BranchIdRequest): Observable<FetchBranchResponse>;
 
-  createTableLocation(request: CreateTableLocationRequest): Observable<UtilitiesResponse>;
+  /**
+   * rpc UpdateBranch(UpdateBranchRequest) returns (UtilitiesResponse);
+   * rpc DeleteBranch(BranchIdRequest) returns (UtilitiesResponse);
+   */
 
-  createBedSize(request: CreateBedSizeRequest): Observable<UtilitiesResponse>;
-
-  createRoomLocation(request: CreateRoomLocationRequest): Observable<UtilitiesResponse>;
-
-  /** Utilities */
-
-  fetchServiceTypes(request: EmptyRequest): Observable<GetServiceTypesResponse>;
-
-  getTableLocations(request: OrganizationIdRequest): Observable<GetTableLocationsResponse>;
-
-  getBedSizes(request: OrganizationIdRequest): Observable<GetBedSizesResponse>;
-
-  getRoomLocations(request: OrganizationIdRequest): Observable<GetRoomLocationsResponse>;
-
-  getCountries(request: EmptyRequest): Observable<GetCountriesResponse>;
+  fetchCompanyBranches(request: FetchCompanyRequest): Observable<FetchBranchesResponse>;
 
   fetchOrgRoles(request: OrganizationIdRequest): Observable<FetchRolesResponse>;
 
@@ -473,55 +369,35 @@ export interface OrganizationServiceController {
     request: OrganizationIdRequest,
   ): Promise<FetchCompaniesResponse> | Observable<FetchCompaniesResponse> | FetchCompaniesResponse;
 
-  /** Delete Utilities */
+  fetchCompany(
+    request: FetchCompanyRequest,
+  ): Promise<FetchCompanyResponse> | Observable<FetchCompanyResponse> | FetchCompanyResponse;
 
-  deleteTableLocation(
-    request: DeleteTableLocationRequest,
+  handleMultiBranchCompanySetup(
+    request: FetchCompanyRequest,
   ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
 
-  deleteBedSize(
-    request: DeleteBedSizeRequest,
+  updateCompanyDetails(
+    request: UpdateCompanyDetailsRequest,
   ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
 
-  deleteRoomLocation(
-    request: DeleteRoomLocationRequest,
-  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+  /**
+   * Create Branch
+   * rpc CreateBranch(CreateBranchRequest) returns (UtilitiesResponse);
+   */
 
-  /** CREATE UTILITIES */
+  fetchBranch(
+    request: BranchIdRequest,
+  ): Promise<FetchBranchResponse> | Observable<FetchBranchResponse> | FetchBranchResponse;
 
-  createTableLocation(
-    request: CreateTableLocationRequest,
-  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+  /**
+   * rpc UpdateBranch(UpdateBranchRequest) returns (UtilitiesResponse);
+   * rpc DeleteBranch(BranchIdRequest) returns (UtilitiesResponse);
+   */
 
-  createBedSize(
-    request: CreateBedSizeRequest,
-  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
-
-  createRoomLocation(
-    request: CreateRoomLocationRequest,
-  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
-
-  /** Utilities */
-
-  fetchServiceTypes(
-    request: EmptyRequest,
-  ): Promise<GetServiceTypesResponse> | Observable<GetServiceTypesResponse> | GetServiceTypesResponse;
-
-  getTableLocations(
-    request: OrganizationIdRequest,
-  ): Promise<GetTableLocationsResponse> | Observable<GetTableLocationsResponse> | GetTableLocationsResponse;
-
-  getBedSizes(
-    request: OrganizationIdRequest,
-  ): Promise<GetBedSizesResponse> | Observable<GetBedSizesResponse> | GetBedSizesResponse;
-
-  getRoomLocations(
-    request: OrganizationIdRequest,
-  ): Promise<GetRoomLocationsResponse> | Observable<GetRoomLocationsResponse> | GetRoomLocationsResponse;
-
-  getCountries(
-    request: EmptyRequest,
-  ): Promise<GetCountriesResponse> | Observable<GetCountriesResponse> | GetCountriesResponse;
+  fetchCompanyBranches(
+    request: FetchCompanyRequest,
+  ): Promise<FetchBranchesResponse> | Observable<FetchBranchesResponse> | FetchBranchesResponse;
 
   fetchOrgRoles(
     request: OrganizationIdRequest,
@@ -548,17 +424,11 @@ export function OrganizationServiceControllerMethods() {
       "validateCompanyReference",
       "createCompany",
       "fetchOrganizationCompanies",
-      "deleteTableLocation",
-      "deleteBedSize",
-      "deleteRoomLocation",
-      "createTableLocation",
-      "createBedSize",
-      "createRoomLocation",
-      "fetchServiceTypes",
-      "getTableLocations",
-      "getBedSizes",
-      "getRoomLocations",
-      "getCountries",
+      "fetchCompany",
+      "handleMultiBranchCompanySetup",
+      "updateCompanyDetails",
+      "fetchBranch",
+      "fetchCompanyBranches",
       "fetchOrgRoles",
       "fetchOrgRole",
       "createBusinessUserRole",

@@ -10,12 +10,23 @@ service FinancialsService {
   rpc Credit (WalletTransactionRequest) returns (WalletReply);
   rpc Debit (WalletTransactionRequest) returns (WalletReply);
   rpc Transfer (WalletTransferRequest) returns (WalletReply);
+
+  rpc GetCountries(EmptyRequest) returns (GetCountriesResponse);
+  rpc GetCountry(GetCountryRequest) returns (GetCountryResponse);
+
 }
+
+message EmptyRequest {}
 
 message CreateWalletRequest {
   string entity_id = 1;
   WALLET_ENTITY_TYPE_ENUM entity_type = 2;
   string currency_code = 3;
+}
+
+
+message GetCountryRequest {
+  string country_code = 1;
 }
 
 message UpdateWalletRequest {
@@ -47,7 +58,24 @@ message WalletReply {
   string message = 2;
   Wallet wallet = 3;
 }
+message GetCountryResponse {
+  bool success = 1;
+  optional string error = 2;
+  Country country = 3;
+}
+message GetCountriesResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated Country countries = 3;
+}
 
+message Country {
+  string country_code = 1;
+  string country_name = 2;
+  string currency_code = 3;
+  // bool is_active = 5;
+
+}
 message Wallet {
   string wallet_id = 1;
   string entity_id = 2;
@@ -59,11 +87,10 @@ message Wallet {
   string updated_at = 8;
 }
 
-enum WALLET_ENTITY_TYPE_ENUM
-    {
-        ORGANIZATION = 0;
-        COMPANY = 1;
-        BRANCH = 2;
-        ADMIN = 3;
-        USER = 4;
-    } 
+enum WALLET_ENTITY_TYPE_ENUM {
+  ORGANIZATION = 0;
+  COMPANY = 1;
+  BRANCH = 2;
+  ADMIN = 3;
+  USER = 4;
+} 

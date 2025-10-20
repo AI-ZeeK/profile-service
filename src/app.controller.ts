@@ -8,6 +8,8 @@ import {
   UpdateUserRequest,
   CreateOrUpdateBusinessUserRoleRequest,
   ValidateAccountRequest,
+  GetUserContactsRequest,
+  UpdateUserStatusRequest,
 } from './shared/dependencies/profile.pb';
 import { BusinessUserService } from './user/business-user.service';
 

@@ -36,6 +36,7 @@ model User {
   kyc_verified        Boolean?    @default(false)
   is_blocked          Boolean?    @default(false)
   fcm_token           String      @default("")
+  country_code        String      @default("")
   refresh_token       String      @default("")
   last_seen           String      @default("online")
   account_type        AccountType @default(INDIVIDUAL)
@@ -98,11 +99,13 @@ model BusinessUserRole {
 }
 
 model Staff {
-  staff_id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  company_id       String   @db.Uuid // Reference to Organization Service
-  branch_id        String?  @db.Uuid // Reference to Organization Service
-  user_id          String   @db.Uuid
-  role_id          String?  @db.Uuid // Reference to Organization Service
+  staff_id   String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  company_id String  @db.Uuid // Reference to Organization Service
+  branch_id  String? @db.Uuid // Reference to Organization Service
+  user_id    String  @db.Uuid
+  role_id    String? @db.Uuid // Reference to Organization Service
+  email      String  @unique @db.VarChar(255)
+
   designation      String?
   profile_complete Boolean  @default(false)
   payroll_active   Boolean  @default(true)
@@ -142,20 +145,19 @@ model StaffDepartment {
 }
 
 model Verification {
-  verification_id  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id          String?             @db.Uuid
-  otp_code         String              @db.VarChar(6) // 6-digit OTP
-  purpose          VerificationPurpose
-  expires_at       DateTime
-  created_at       DateTime            @default(now())
-  updated_at       DateTime            @updatedAt
-  user             User?               @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  verification_id String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String?             @db.Uuid
+  otp_code        String              @db.VarChar(6) // 6-digit OTP
+  purpose         VerificationPurpose
+  expires_at      DateTime
+  created_at      DateTime            @default(now())
+  updated_at      DateTime            @updatedAt
+  user            User?               @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@index([user_id, purpose], map: "idx_verification_user_purpose")
   @@map("verifications")
   @@schema("profiles")
 }
-
 
 // ============================================================================
 // BASIC ROLES & PERMISSIONS
@@ -170,7 +172,7 @@ model Role {
   updated_at  DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
   deleted_at  DateTime? @db.Timestamptz(6)
 
-  user_roles    UserRole[]
+  user_roles UserRole[]
 
   @@index([role_name], map: "idx_roles_role_name")
   @@map("roles")

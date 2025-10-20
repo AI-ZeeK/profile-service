@@ -6,7 +6,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserAuthorizedRequest } from 'src/interfaces/user.interface';
-import { Prisma, User } from '@prisma/client';
+import { BusinessUser, Prisma, User, UserRole } from '@prisma/client';
 import { UpdateUserDto } from './dto/create-user.dto';
 import { FilesService } from 'src/modules/files/files.service';
 import { AddressService } from 'src/modules/address/address.service';
@@ -22,9 +22,14 @@ import {
   FILE_ENTITY_TYPE_ENUM,
 } from '@djengo/proto-contracts';
 import { JwtService } from '@nestjs/jwt';
+import { Address } from 'src/shared/dependencies/address.pb';
+import { FinancialsService } from 'src/modules/financials/financials.service';
 
 type UserWithAvatar<T = {}> = User & {
   avatar_url: string | null;
+  business_user: BusinessUser | undefined;
+  address: Address | undefined;
+  user_role: UserRole | undefined;
 } & T;
 
 @Injectable()
@@ -36,12 +41,13 @@ export class UserService {
     private filesService: FilesService,
     private addressService: AddressService,
     private jwtService: JwtService,
+    private financialsService: FinancialsService,
   ) {}
   async findOne<T extends Prisma.UserInclude>(
     where: Prisma.UserWhereUniqueInput,
     include?: T,
     sample_data?: boolean,
-  ) {
+  ): Promise<UserWithAvatar<User> | null> {
     try {
       const userData = await this.prisma.user.findUnique({
         where,
@@ -78,7 +84,7 @@ export class UserService {
 
       return {
         ...userData,
-        address,
+        address: address.address,
         avatar_url: avatarFile?.fileUrl || null,
         user_role: user_role,
         business_user: business_user,
@@ -260,6 +266,7 @@ export class UserService {
           last_name: data.lastName,
           email: data.email,
           phone_number: data.phoneNumber,
+          country_code: data.countryCode || undefined,
         },
       });
 

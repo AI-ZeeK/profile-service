@@ -19,10 +19,17 @@ export enum walletEntityTypeEnum {
   UNRECOGNIZED = -1,
 }
 
+export interface EmptyRequest {
+}
+
 export interface CreateWalletRequest {
   entityId: string;
   entityType: walletEntityTypeEnum;
   currencyCode: string;
+}
+
+export interface GetCountryRequest {
+  countryCode: string;
 }
 
 export interface UpdateWalletRequest {
@@ -56,6 +63,25 @@ export interface WalletReply {
   wallet: Wallet | undefined;
 }
 
+export interface GetCountryResponse {
+  success: boolean;
+  error?: string | undefined;
+  country: Country | undefined;
+}
+
+export interface GetCountriesResponse {
+  success: boolean;
+  error?: string | undefined;
+  countries: Country[];
+}
+
+export interface Country {
+  countryCode: string;
+  countryName: string;
+  /** bool is_active = 5; */
+  currencyCode: string;
+}
+
 export interface Wallet {
   walletId: string;
   entityId: string;
@@ -79,6 +105,10 @@ export interface FinancialsServiceClient {
   debit(request: WalletTransactionRequest): Observable<WalletReply>;
 
   transfer(request: WalletTransferRequest): Observable<WalletReply>;
+
+  getCountries(request: EmptyRequest): Observable<GetCountriesResponse>;
+
+  getCountry(request: GetCountryRequest): Observable<GetCountryResponse>;
 }
 
 export interface FinancialsServiceController {
@@ -91,11 +121,27 @@ export interface FinancialsServiceController {
   debit(request: WalletTransactionRequest): Promise<WalletReply> | Observable<WalletReply> | WalletReply;
 
   transfer(request: WalletTransferRequest): Promise<WalletReply> | Observable<WalletReply> | WalletReply;
+
+  getCountries(
+    request: EmptyRequest,
+  ): Promise<GetCountriesResponse> | Observable<GetCountriesResponse> | GetCountriesResponse;
+
+  getCountry(
+    request: GetCountryRequest,
+  ): Promise<GetCountryResponse> | Observable<GetCountryResponse> | GetCountryResponse;
 }
 
 export function FinancialsServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createWallet", "updateWallet", "credit", "debit", "transfer"];
+    const grpcMethods: string[] = [
+      "createWallet",
+      "updateWallet",
+      "credit",
+      "debit",
+      "transfer",
+      "getCountries",
+      "getCountry",
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("FinancialsService", method)(constructor.prototype[method], method, descriptor);

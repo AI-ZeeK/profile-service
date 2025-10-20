@@ -189,6 +189,33 @@ export class AuthService {
           code: 404,
           message: 'role unavailable',
         });
+      if (ROLES_ENUM.BUSINESS_USER === role.role_name) {
+        const businessUser = await this.prisma.businessUser.findUnique({
+          where: {
+            email,
+          },
+        });
+
+        if (businessUser) {
+          throw new RpcException({
+            code: 400,
+            message: 'User with this email already exists, Proceed to login',
+          });
+        }
+      }
+      if (ROLES_ENUM.STAFF === role.role_name) {
+        const staffUser = await this.prisma.staff.findUnique({
+          where: {
+            email,
+          },
+        });
+        if (staffUser) {
+          throw new RpcException({
+            code: 400,
+            message: 'User with this email already exists, Proceed to login',
+          });
+        }
+      }
       const saltRounds = 10; // Number of salt rounds (higher is more secure but slower)
 
       const hashed_password = await bcrypt.hash(password, saltRounds);
@@ -245,6 +272,7 @@ export class AuthService {
           data: {
             company_id: company?.companyId || '',
             user_id: user.user_id,
+            email,
           },
         });
       }
@@ -325,18 +353,40 @@ export class AuthService {
   // }
   async login({ email, password }: { email: string; password: string }) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: {
-          email: email.toLowerCase(),
-        },
+      // const user = await this.prisma.user.findUnique({
+      //   where: {
+      //     email: email.toLowerCase(),
+      //   },
+      //   include:{
+      //   user_roles:true
+      //   }
+      // });
+      let user = await this.userService.findOne({
+        email: email.toLowerCase(),
       });
+      if (!user) {
+        const businessUser = await this.prisma.businessUser.findUnique({
+          where: {
+            email: email.toLowerCase(),
+          },
+        });
+        if (!businessUser) {
+          throw new RpcException({
+            code: 404,
+            message: 'user not found',
+          });
+        }
+
+        user = await this.userService.findOne({
+          user_id: businessUser.user_id,
+        });
+      }
       if (!user) {
         throw new RpcException({
           code: 404,
-          message: 'User not found',
+          message: 'user not found',
         });
       }
-
       const isPasswordValid = await bcrypt.compare(
         password,
         user.password! || '',
@@ -479,7 +529,7 @@ export class AuthService {
       return {
         message: 'OTP verified successfully',
         accessToken: access_token,
-        user: Helpers.toCamelCase(user),
+        user: user,
       };
     } catch (error) {
       throw new RpcException(error);

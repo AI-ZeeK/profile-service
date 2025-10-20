@@ -181,6 +181,7 @@ export interface UpdateUserRequest {
   phoneNumber?: string | undefined;
   avatarUrl?: string | undefined;
   address?: Address | undefined;
+  countryCode?: string | undefined;
 }
 
 export interface BusinessUser {

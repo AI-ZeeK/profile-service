@@ -89,6 +89,10 @@ export interface RestaurantTableRequest {
   description: string;
 }
 
+export interface OrganizationIdRequest {
+  organizationId: string;
+}
+
 export interface HotelRoomTypeRequest {
   name: string;
   description: string;
@@ -119,6 +123,24 @@ export interface CreateServiceBranchResponse {
   serviceBranchId: string;
 }
 
+export interface CreateTableLocationRequest {
+  name: string;
+  organizationId: string;
+  creatorId: string;
+}
+
+export interface CreateBedSizeRequest {
+  name: string;
+  organizationId: string;
+  creatorId: string;
+}
+
+export interface CreateRoomLocationRequest {
+  name: string;
+  organizationId: string;
+  creatorId: string;
+}
+
 /** --- Business Hours Upsert --- */
 export interface UpsertBusinessHoursRequest {
   serviceBranchId: string;
@@ -134,6 +156,118 @@ export interface UpsertBusinessHoursResponse {
 export interface ServiceType {
   serviceTypeId: string;
   name: string;
+}
+
+export interface GetServiceTypesResponse {
+  success: boolean;
+  error?: string | undefined;
+  serviceTypes: ServiceType[];
+}
+
+export interface GetBedSizesResponse {
+  success: boolean;
+  error?: string | undefined;
+  bedSizes: BedSize[];
+}
+
+export interface DeleteTableLocationRequest {
+  tableLocationId: number;
+}
+
+export interface DeleteBedSizeRequest {
+  bedSizeId: number;
+}
+
+export interface DeleteRoomLocationRequest {
+  roomLocationId: number;
+}
+
+export interface GetTableLocationsResponse {
+  success: boolean;
+  error?: string | undefined;
+  tableLocations: TableLocation[];
+}
+
+export interface GetRoomLocationsResponse {
+  success: boolean;
+  error?: string | undefined;
+  roomLocations: RoomLocation[];
+}
+
+export interface UtilitiesResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+}
+
+export interface TableLocation {
+  tableLocationId: number;
+  name: string;
+  description: string;
+  isGlobal: boolean;
+  isActive: boolean;
+}
+
+export interface RoomLocation {
+  roomLocationId: number;
+  name: string;
+  description: string;
+  isGlobal: boolean;
+  isActive: boolean;
+}
+
+export interface HotelRoomType {
+  name: string;
+  description?: string | undefined;
+  pricePerNight: number;
+  maxOccupancy: number;
+  bedSizeId: number;
+  hotelRooms: HotelRoom[];
+}
+
+export interface HotelRoom {
+  ref: string;
+  description?: string | undefined;
+  locationId: number;
+  isActive?: boolean | undefined;
+}
+
+export interface BedSize {
+  bedSizeId: number;
+  name: string;
+  description: string;
+  isGlobal: boolean;
+  isActive: boolean;
+}
+
+export interface BusinessType {
+  type?: string | undefined;
+  description?: string | undefined;
+  checkInTime?: string | undefined;
+  checkOutTime?: string | undefined;
+  businessHours: BusinessHours[];
+  restaurantTableTypes: RestaurantTableType[];
+  hotelRoomTypes: HotelRoomType[];
+}
+
+export interface BusinessHours {
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+}
+
+export interface RestaurantTableType {
+  name?: string | undefined;
+  description?: string | undefined;
+  seatingCapacity?: number | undefined;
+  tables: RestaurantTable[];
+}
+
+export interface RestaurantTable {
+  name?: string | undefined;
+  description?: string | undefined;
+  locationId?: number | undefined;
 }
 
 export const OPERATIONS_PACKAGE_NAME = "operations";
@@ -157,11 +291,35 @@ export interface OperationServiceClient {
 
   /** Service Types Management */
 
-  getServiceTypes(request: EmptyRequest): Observable<CreateServiceTypeResponse>;
+  getServiceTypes(request: EmptyRequest): Observable<GetServiceTypesResponse>;
 
   createServiceType(request: CreateServiceTypeRequest): Observable<CreateServiceTypeResponse>;
 
   updateServiceType(request: UpdateServiceTypeRequest): Observable<CreateServiceTypeResponse>;
+
+  fetchServiceTypes(request: EmptyRequest): Observable<GetServiceTypesResponse>;
+
+  getTableLocations(request: OrganizationIdRequest): Observable<GetTableLocationsResponse>;
+
+  getBedSizes(request: OrganizationIdRequest): Observable<GetBedSizesResponse>;
+
+  getRoomLocations(request: OrganizationIdRequest): Observable<GetRoomLocationsResponse>;
+
+  /** Delete Utilities */
+
+  deleteTableLocation(request: DeleteTableLocationRequest): Observable<UtilitiesResponse>;
+
+  deleteBedSize(request: DeleteBedSizeRequest): Observable<UtilitiesResponse>;
+
+  deleteRoomLocation(request: DeleteRoomLocationRequest): Observable<UtilitiesResponse>;
+
+  /** CREATE UTILITIES */
+
+  createTableLocation(request: CreateTableLocationRequest): Observable<UtilitiesResponse>;
+
+  createBedSize(request: CreateBedSizeRequest): Observable<UtilitiesResponse>;
+
+  createRoomLocation(request: CreateRoomLocationRequest): Observable<UtilitiesResponse>;
 }
 
 /** The greeting service definition. */
@@ -193,7 +351,7 @@ export interface OperationServiceController {
 
   getServiceTypes(
     request: EmptyRequest,
-  ): Promise<CreateServiceTypeResponse> | Observable<CreateServiceTypeResponse> | CreateServiceTypeResponse;
+  ): Promise<GetServiceTypesResponse> | Observable<GetServiceTypesResponse> | GetServiceTypesResponse;
 
   createServiceType(
     request: CreateServiceTypeRequest,
@@ -202,6 +360,50 @@ export interface OperationServiceController {
   updateServiceType(
     request: UpdateServiceTypeRequest,
   ): Promise<CreateServiceTypeResponse> | Observable<CreateServiceTypeResponse> | CreateServiceTypeResponse;
+
+  fetchServiceTypes(
+    request: EmptyRequest,
+  ): Promise<GetServiceTypesResponse> | Observable<GetServiceTypesResponse> | GetServiceTypesResponse;
+
+  getTableLocations(
+    request: OrganizationIdRequest,
+  ): Promise<GetTableLocationsResponse> | Observable<GetTableLocationsResponse> | GetTableLocationsResponse;
+
+  getBedSizes(
+    request: OrganizationIdRequest,
+  ): Promise<GetBedSizesResponse> | Observable<GetBedSizesResponse> | GetBedSizesResponse;
+
+  getRoomLocations(
+    request: OrganizationIdRequest,
+  ): Promise<GetRoomLocationsResponse> | Observable<GetRoomLocationsResponse> | GetRoomLocationsResponse;
+
+  /** Delete Utilities */
+
+  deleteTableLocation(
+    request: DeleteTableLocationRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  deleteBedSize(
+    request: DeleteBedSizeRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  deleteRoomLocation(
+    request: DeleteRoomLocationRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  /** CREATE UTILITIES */
+
+  createTableLocation(
+    request: CreateTableLocationRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  createBedSize(
+    request: CreateBedSizeRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  createRoomLocation(
+    request: CreateRoomLocationRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
 }
 
 export function OperationServiceControllerMethods() {
@@ -215,6 +417,16 @@ export function OperationServiceControllerMethods() {
       "getServiceTypes",
       "createServiceType",
       "updateServiceType",
+      "fetchServiceTypes",
+      "getTableLocations",
+      "getBedSizes",
+      "getRoomLocations",
+      "deleteTableLocation",
+      "deleteBedSize",
+      "deleteRoomLocation",
+      "createTableLocation",
+      "createBedSize",
+      "createRoomLocation",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

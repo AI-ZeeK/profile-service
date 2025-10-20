@@ -204,6 +204,7 @@ message UpdateUserRequest {
   optional string phone_number = 5;
   optional string avatar_url = 6;
   optional Address address = 7;
+  optional string country_code = 8;
 }
 
 // 📤 RESPONSE MESSAGES

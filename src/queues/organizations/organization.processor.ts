@@ -38,41 +38,55 @@ export class OrganizationProcessor {
       });
       // this.logger.log('🏢 Organization creation result:', organization);
 
+      this.logger.log(
+        '✅ Organization created, queueing business user...',
+        organization,
+      );
       if (organization.success) {
-        // this.logger.log('✅ Organization created, queueing business user...');
-        
         // Use BullMQ for internal business user processing
         await this.businessUserQueue.add('create_business_user', {
           user_id: data.creatorId,
           organization_id: organization.organizationId,
           email: data.email,
         });
-        
+
         // this.logger.log('✅ Business user queued, creating wallets via RabbitMQ...');
 
-        // Use RabbitMQ for external wallet service calls
-        try {
-          const userWalletResult = await this.rabbitmqService.sendCreateWallet({
-            entityId: data.creatorId,
-            entityType: walletEntityTypeEnum.USER,
-            currencyCode: 'USD',
-          } as CreateWalletRequest);
-          this.logger.log('🧱 User wallet created via RabbitMQ:', userWalletResult);
+        // Use RabbitMQ for external wallet service calls - queue both simultaneously
+        // try {
+        //   // const [userWalletResult, orgWalletResult] = await Promise.all([
+        //   //   this.rabbitmqService.sendCreateWallet({
+        //   //     entityId: data.creatorId,
+        //   //     entityType: walletEntityTypeEnum.USER,
+        //   //     currencyCode: '',
+        //   //   } as CreateWalletRequest),
+        //   //   this.rabbitmqService.sendCreateWallet({
+        //   //     entityId: organization.organizationId,
+        //   //     entityType: walletEntityTypeEnum.ORGANIZATION,
+        //   //     currencyCode: '',
+        //   //   } as CreateWalletRequest),
+        //   // ]);
 
-          const orgWalletResult = await this.rabbitmqService.sendCreateWallet({
-            entityId: organization.organizationId,
-            entityType: walletEntityTypeEnum.ORGANIZATION,
-            currencyCode: 'USD',
-          } as CreateWalletRequest);
-          this.logger.log('🧱 Organization wallet created via RabbitMQ:', orgWalletResult);
-
-        } catch (walletError) {
-          this.logger.error('Failed to create wallets via RabbitMQ:', walletError);
-          // Note: We might want to implement retry logic or compensation here
-        }
+        //   this.logger.log(
+        //     '🧱 User wallet created via RabbitMQ:',
+        //     userWalletResult,
+        //   );
+        //   this.logger.log(
+        //     '🧱 Organization wallet created via RabbitMQ:',
+        //     orgWalletResult,
+        //   );
+        // } catch (walletError) {
+        //   this.logger.error(
+        //     'Failed to create wallets via RabbitMQ:',
+        //     walletError,
+        //   );
+        //   // Note: We might want to implement retry logic or compensation here
+        // }
 
         // this.logger.log('✅ Wallets processed via RabbitMQ');
       } else {
+        this.logger.error('Organization creation failed:', organization);
+
         this.prisma.user.delete({
           where: { user_id: job.data.creatorId },
         });
@@ -80,6 +94,7 @@ export class OrganizationProcessor {
         throw new RpcException('Organization creation failed');
       }
     } catch (error) {
+      this.logger.error('Organization job failed:', error);
       await this.prisma.user.delete({
         where: { user_id: job.data.creatorId },
       });
