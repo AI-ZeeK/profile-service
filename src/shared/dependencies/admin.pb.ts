@@ -117,7 +117,7 @@ export interface LogoutRequest {
 }
 
 export interface RefreshTokenRequest {
-  userId: string;
+  token: string;
 }
 
 export interface GetUserRequest {

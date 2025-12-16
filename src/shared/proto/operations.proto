@@ -12,6 +12,12 @@ service OperationService {
 
   // Company Services Management
   rpc CreateCompanyServices(CreateCompanyServicesRequest) returns (CreateCompanyServicesResponse);
+  rpc UpdateCompanyServiceStatus(UpdateCompanyServiceStatusRequest) returns (UpdateCompanyServiceResponse);
+  rpc UpdateCompanyService(UpdateCompanyServiceRequest) returns (UpdateCompanyServiceResponse);
+  rpc DeleteCompanyService(DeleteCompanyServiceRequest) returns (DeleteCompanyServiceResponse);
+  rpc GetCompanyServices(GetCompanyServicesRequest) returns (GetCompanyServicesResponse);
+  rpc GetCompanyService(GetCompanyServiceRequest) returns (GetCompanyServiceResponse);
+  rpc SearchCompanyServices(SearchCompanyServicesRequest) returns (GetCompanyServicesResponse);
   rpc CreateServiceBranch(CreateServiceBranchRequest) returns (CreateServiceBranchResponse);
   rpc UpsertBusinessHours(UpsertBusinessHoursRequest) returns (UpsertBusinessHoursResponse);
 
@@ -21,6 +27,12 @@ service OperationService {
   rpc GetServiceTypes(EmptyRequest) returns (GetServiceTypesResponse);
   rpc CreateServiceType(CreateServiceTypeRequest) returns (CreateServiceTypeResponse);
   rpc UpdateServiceType(UpdateServiceTypeRequest) returns (CreateServiceTypeResponse);
+
+    // Business Types Management
+  rpc GetAdminBusinessTypes(EmptyRequest) returns (GetBusinessTypesResponse);
+  rpc GetBusinessTypes(EmptyRequest) returns (GetBusinessTypesResponse);
+  rpc CreateBusinessType(CreateBusinessTypeRequest) returns (CreateBusinessTypeResponse);
+  rpc UpdateBusinessTypeActiveStatus(UpdateBusinessTypeActiveStatusRequest) returns (UpdateBusinessTypeActiveStatusResponse);
 
 
   rpc FetchServiceTypes(EmptyRequest) returns (GetServiceTypesResponse);
@@ -78,13 +90,102 @@ message HealthCheckResponse {
 // --- Company Services Creation ---
 message CreateCompanyServicesRequest {
   string company_id = 1;
-  string branch_id = 2;
-  repeated BusinessTypeRequest business_types = 3;
+  int32 business_type_id = 2;
+  string name = 3;
+  string base_price = 4;
+  string description = 5;
+  bool is_active = 6;
+  optional string branch_id = 7;
+  repeated BusinessTypeRequest business_types = 8;
 }
 
 message CreateCompanyServicesResponse {
   string message = 1;
   bool success = 2;
+  optional CompanyServiceData data = 3;
+}
+
+// --- Update Company Service ---
+message UpdateCompanyServiceStatusRequest {
+  string company_service_id = 1;
+  optional bool is_active = 2;
+}
+message UpdateCompanyServiceRequest {
+  string company_service_id = 1;
+  optional int32 business_type_id = 2;
+  optional string name = 3;
+  optional string base_price = 4;
+  optional string description = 5;
+  optional bool is_active = 6;
+}
+
+message UpdateCompanyServiceResponse {
+  bool success = 1;
+  string message = 2;
+  optional CompanyServiceData data = 3;
+}
+
+// --- Delete Company Service (Soft Delete) ---
+message DeleteCompanyServiceRequest {
+  string company_service_id = 1;
+}
+
+message DeleteCompanyServiceResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// --- Get Company Services ---
+message GetCompanyServicesRequest {
+  string company_id = 1;
+  optional string branch_id = 2;
+  optional bool include_inactive = 3;
+}
+// --- Get Company Services ---
+message GetCompanyServiceRequest {
+  string company_service_id = 1;
+}
+
+// --- Search Company Services with Filters ---
+message SearchCompanyServicesRequest {
+  optional string company_id = 1; // Optional - filter by company, if not provided returns all companies
+  optional string service_name = 2; // Filter by service/business type name
+  optional int32 business_type_id = 3; // Filter by business type ID
+  optional bool include_inactive = 4; // Include inactive services
+  optional string branch_id = 5; // Filter by branch
+  optional bool include_deleted = 6; // Include soft-deleted services (default: false)
+}
+
+message GetCompanyServiceResponse  {
+  bool success = 1;
+  optional string error = 2;
+  string message = 3;
+  CompanyServiceData company_service = 4;
+}
+message GetCompanyServicesResponse {
+  bool success = 1;
+  optional string error = 2;
+  string message = 3;
+  repeated CompanyServiceData company_services = 4;
+}
+
+
+
+
+
+message CompanyServiceData {
+  string company_service_id = 1;
+  string company_id = 2;
+  int32 business_type_id = 3;
+  string name = 4;
+  string price = 5;
+  string description = 6;
+  bool is_active = 7;
+  optional string branch_id = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  optional BusinessType business_type = 11;
+  repeated ServiceBranch service_branches = 12;
 }
 
 message BusinessTypeRequest {
@@ -191,6 +292,44 @@ message GetServiceTypesResponse {
   repeated ServiceType service_types = 3;
 }
 
+// Business Types Messages
+message CreateBusinessTypeRequest {
+  string name = 1;
+  string description = 2;
+  bool is_active = 3;
+}
+
+message CreateBusinessTypeResponse {
+  bool success = 1;
+  string message = 2;
+  optional BusinessTypeData data = 3;
+}
+
+message UpdateBusinessTypeActiveStatusRequest {
+  int32 business_type_id = 1;
+}
+
+message UpdateBusinessTypeActiveStatusResponse {
+  bool success = 1;
+  string message = 2;
+  optional BusinessTypeData data = 3;
+}
+
+message GetBusinessTypesResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated BusinessTypeData business_types = 3;
+}
+
+message BusinessTypeData {
+  int32 business_type_id = 1;
+  string name = 2;
+  string description = 3;
+  bool is_active = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
+
 message GetBedSizesResponse {
   bool success = 1;
   optional string error = 2;
@@ -271,17 +410,26 @@ message BedSize {
   bool is_global = 4;
   bool is_active = 5;
 }
-
-
 message BusinessType {
-  optional string type = 1;
-  optional string description = 2;
-  optional string check_in_time = 3;
-  optional string check_out_time = 4;
-  repeated BusinessHours business_hours = 5;
-  repeated RestaurantTableType restaurant_table_types = 6;
-  repeated HotelRoomType hotel_room_types = 7;
+  int32 business_type_id = 1;
+  string name = 2;
+  string description = 3;
+  bool is_active = 4;
 }
+message ServiceBranch{
+  string service_branch_id = 1;
+  string branch_id = 2;
+  string service_id = 3;
+  string service_type_name = 4;
+  string description = 5;
+  string check_in_time = 6;
+  string check_out_time = 7;
+  repeated BusinessHours business_hours = 8;
+  repeated RestaurantTableType restaurant_table_types = 9;
+  repeated HotelRoomType hotel_room_types = 10;
+
+}
+
 
 message BusinessHours {
   string day_of_week = 1;

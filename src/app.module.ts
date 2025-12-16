@@ -9,6 +9,7 @@ import { SharedModule } from './modules/shared.module';
 import { AuthModule } from './auth/auth.module';
 import { RolesModule } from './roles/roles.module';
 import { QueueModule } from './queues/queue.module';
+import { StaffModule } from './staff/staff.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { QueueModule } from './queues/queue.module';
     AuthModule,
     RolesModule,
     QueueModule,
+    StaffModule,
   ],
   controllers: [AppController],
   providers: [AppService],

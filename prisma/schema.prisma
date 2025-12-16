@@ -37,11 +37,12 @@ model User {
   is_blocked          Boolean?    @default(false)
   fcm_token           String      @default("")
   country_code        String      @default("")
-  refresh_token       String      @default("")
+  // Removed refresh_token field; now tracked in UserSession
   last_seen           String      @default("online")
   account_type        AccountType @default(INDIVIDUAL)
   permission_level    Int         @default(1)
   created_at          DateTime    @default(now())
+  last_login          DateTime    @default(now())
   updated_at          DateTime    @updatedAt
   deleted_at          DateTime?   @db.Timestamptz(6)
 
@@ -52,10 +53,40 @@ model User {
   restricted_permissions  UserPermissionRestriction[] @relation("restricted_by")
   verifications           Verification[]
   staff                   Staff[]
+  sessions                UserSession[]
 
+  @@index([user_id], map: "idx_users_user_id")
   @@index([email], map: "idx_users_email")
   @@index([phone_number], map: "idx_users_phone_number")
+  @@index([last_login], map: "idx_users_last_login")
   @@map("users")
+  @@schema("profiles")
+}
+
+enum SessionSource {
+  WEB
+  MOBILE
+  TABLET
+  OTHER
+
+  @@schema("profiles")
+}
+
+model UserSession {
+  session_id    String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String        @db.Uuid
+  refresh_token String        @db.Text
+  source        SessionSource @default(WEB)
+  device_info   String        @db.Text // e.g., browser, device, IP, etc.
+  is_active     Boolean       @default(true)
+  login_at      DateTime      @default(now())
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([is_active])
+  @@unique([user_id, source], name: "unique_session")
+  @@map("user_sessions")
   @@schema("profiles")
 }
 

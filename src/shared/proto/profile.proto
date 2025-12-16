@@ -31,6 +31,42 @@ service ProfileService {
 
   rpc FetchOrganizationRoles(OrganizationRoleIdRequest) returns (FetchOrganizationRolesResponse);
   rpc FetchOrganizationRolesCount(OrganizationRoleIdRequest) returns (FetchOrganizationRolesCountResponse);
+
+  rpc getStaffDetails(StaffDetailsRequest) returns (StaffDetailsResponse);
+  rpc getManyStaffDetails(ManyStaffDetailsRequest) returns (ManyStaffDetailsResponse);
+}
+
+
+message StaffDetailsRequest {
+  string staff_id = 1;  
+  string company_id = 2;
+}
+message ManyStaffDetailsRequest {
+  repeated string staff_ids = 1;  
+  string company_id = 2;
+}
+
+message Staff {
+  string staff_id = 1;
+  string company_id = 2;
+  string user_id = 3;
+  optional string branch_id = 4;
+  string email = 5;
+  optional string designation = 6;
+  bool is_active = 7;
+  string created_at = 10;
+  string updated_at = 11;
+}
+
+message StaffDetailsResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional Staff staff = 3;
+}
+message ManyStaffDetailsResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated Staff staffs = 3;
 }
 
 message ValidateAccountRequest {
@@ -108,9 +144,17 @@ message VerifyOtpResponse {
   optional User user = 5;
 }
 
+enum SessionSource {
+  WEB = 0;
+  MOBILE = 1;
+  TABLET = 2;
+  OTHER = 3;
+}
+
 message LoginRequest {
   string email = 1;
   string password = 2;
+
 }
 
 message SendOtpRequest {
@@ -122,6 +166,8 @@ message VerifyOtpRequest {
   string token = 1;
   string otp = 2;
   SendOtpType type = 3;
+  string device_info = 4;
+  SessionSource source = 5;
 }
 
 message SendOtpResponse {
@@ -159,6 +205,7 @@ message RegisterRequest {
   string phone_number = 3;
   string company_ref = 4;
   string role_name = 5;
+
 }
 
 
@@ -170,10 +217,11 @@ enum ROLES_ENUM {
 
 message LogoutRequest {
   string user_id = 1;
+  SessionSource source = 2;
 }
 
 message RefreshTokenRequest {
-  string user_id = 1;
+  string token = 1;
 }
 
 

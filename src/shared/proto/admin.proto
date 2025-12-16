@@ -132,7 +132,7 @@ message LogoutRequest {
 }
 
 message RefreshTokenRequest {
-  string user_id = 1;
+  string token = 1;
 }
 
 

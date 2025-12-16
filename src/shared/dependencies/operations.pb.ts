@@ -49,13 +49,117 @@ export interface HealthCheckResponse {
 /** --- Company Services Creation --- */
 export interface CreateCompanyServicesRequest {
   companyId: string;
-  branchId: string;
+  businessTypeId: number;
+  name: string;
+  basePrice: string;
+  description: string;
+  isActive: boolean;
+  branchId?: string | undefined;
   businessTypes: BusinessTypeRequest[];
 }
 
 export interface CreateCompanyServicesResponse {
   message: string;
   success: boolean;
+  data?: CompanyServiceData | undefined;
+}
+
+/** --- Update Company Service --- */
+export interface UpdateCompanyServiceStatusRequest {
+  companyServiceId: string;
+  isActive?: boolean | undefined;
+}
+
+export interface UpdateCompanyServiceRequest {
+  companyServiceId: string;
+  businessTypeId?: number | undefined;
+  name?: string | undefined;
+  basePrice?: string | undefined;
+  description?: string | undefined;
+  isActive?: boolean | undefined;
+}
+
+export interface UpdateCompanyServiceResponse {
+  success: boolean;
+  message: string;
+  data?: CompanyServiceData | undefined;
+}
+
+/** --- Delete Company Service (Soft Delete) --- */
+export interface DeleteCompanyServiceRequest {
+  companyServiceId: string;
+}
+
+export interface DeleteCompanyServiceResponse {
+  success: boolean;
+  message: string;
+}
+
+/** --- Get Company Services --- */
+export interface GetCompanyServicesRequest {
+  companyId: string;
+  branchId?: string | undefined;
+  includeInactive?: boolean | undefined;
+}
+
+/** --- Get Company Services --- */
+export interface GetCompanyServiceRequest {
+  companyServiceId: string;
+}
+
+/** --- Search Company Services with Filters --- */
+export interface SearchCompanyServicesRequest {
+  /** Optional - filter by company, if not provided returns all companies */
+  companyId?:
+    | string
+    | undefined;
+  /** Filter by service/business type name */
+  serviceName?:
+    | string
+    | undefined;
+  /** Filter by business type ID */
+  businessTypeId?:
+    | number
+    | undefined;
+  /** Include inactive services */
+  includeInactive?:
+    | boolean
+    | undefined;
+  /** Filter by branch */
+  branchId?:
+    | string
+    | undefined;
+  /** Include soft-deleted services (default: false) */
+  includeDeleted?: boolean | undefined;
+}
+
+export interface GetCompanyServiceResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+  companyService: CompanyServiceData | undefined;
+}
+
+export interface GetCompanyServicesResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+  companyServices: CompanyServiceData[];
+}
+
+export interface CompanyServiceData {
+  companyServiceId: string;
+  companyId: string;
+  businessTypeId: number;
+  name: string;
+  price: string;
+  description: string;
+  isActive: boolean;
+  branchId?: string | undefined;
+  createdAt: string;
+  updatedAt: string;
+  businessType?: BusinessType | undefined;
+  serviceBranches: ServiceBranch[];
 }
 
 export interface BusinessTypeRequest {
@@ -164,6 +268,44 @@ export interface GetServiceTypesResponse {
   serviceTypes: ServiceType[];
 }
 
+/** Business Types Messages */
+export interface CreateBusinessTypeRequest {
+  name: string;
+  description: string;
+  isActive: boolean;
+}
+
+export interface CreateBusinessTypeResponse {
+  success: boolean;
+  message: string;
+  data?: BusinessTypeData | undefined;
+}
+
+export interface UpdateBusinessTypeActiveStatusRequest {
+  businessTypeId: number;
+}
+
+export interface UpdateBusinessTypeActiveStatusResponse {
+  success: boolean;
+  message: string;
+  data?: BusinessTypeData | undefined;
+}
+
+export interface GetBusinessTypesResponse {
+  success: boolean;
+  error?: string | undefined;
+  businessTypes: BusinessTypeData[];
+}
+
+export interface BusinessTypeData {
+  businessTypeId: number;
+  name: string;
+  description: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface GetBedSizesResponse {
   success: boolean;
   error?: string | undefined;
@@ -241,10 +383,20 @@ export interface BedSize {
 }
 
 export interface BusinessType {
-  type?: string | undefined;
-  description?: string | undefined;
-  checkInTime?: string | undefined;
-  checkOutTime?: string | undefined;
+  businessTypeId: number;
+  name: string;
+  description: string;
+  isActive: boolean;
+}
+
+export interface ServiceBranch {
+  serviceBranchId: string;
+  branchId: string;
+  serviceId: string;
+  serviceTypeName: string;
+  description: string;
+  checkInTime: string;
+  checkOutTime: string;
   businessHours: BusinessHours[];
   restaurantTableTypes: RestaurantTableType[];
   hotelRoomTypes: HotelRoomType[];
@@ -285,6 +437,18 @@ export interface OperationServiceClient {
 
   createCompanyServices(request: CreateCompanyServicesRequest): Observable<CreateCompanyServicesResponse>;
 
+  updateCompanyServiceStatus(request: UpdateCompanyServiceStatusRequest): Observable<UpdateCompanyServiceResponse>;
+
+  updateCompanyService(request: UpdateCompanyServiceRequest): Observable<UpdateCompanyServiceResponse>;
+
+  deleteCompanyService(request: DeleteCompanyServiceRequest): Observable<DeleteCompanyServiceResponse>;
+
+  getCompanyServices(request: GetCompanyServicesRequest): Observable<GetCompanyServicesResponse>;
+
+  getCompanyService(request: GetCompanyServiceRequest): Observable<GetCompanyServiceResponse>;
+
+  searchCompanyServices(request: SearchCompanyServicesRequest): Observable<GetCompanyServicesResponse>;
+
   createServiceBranch(request: CreateServiceBranchRequest): Observable<CreateServiceBranchResponse>;
 
   upsertBusinessHours(request: UpsertBusinessHoursRequest): Observable<UpsertBusinessHoursResponse>;
@@ -296,6 +460,18 @@ export interface OperationServiceClient {
   createServiceType(request: CreateServiceTypeRequest): Observable<CreateServiceTypeResponse>;
 
   updateServiceType(request: UpdateServiceTypeRequest): Observable<CreateServiceTypeResponse>;
+
+  /** Business Types Management */
+
+  getAdminBusinessTypes(request: EmptyRequest): Observable<GetBusinessTypesResponse>;
+
+  getBusinessTypes(request: EmptyRequest): Observable<GetBusinessTypesResponse>;
+
+  createBusinessType(request: CreateBusinessTypeRequest): Observable<CreateBusinessTypeResponse>;
+
+  updateBusinessTypeActiveStatus(
+    request: UpdateBusinessTypeActiveStatusRequest,
+  ): Observable<UpdateBusinessTypeActiveStatusResponse>;
 
   fetchServiceTypes(request: EmptyRequest): Observable<GetServiceTypesResponse>;
 
@@ -339,6 +515,30 @@ export interface OperationServiceController {
     request: CreateCompanyServicesRequest,
   ): Promise<CreateCompanyServicesResponse> | Observable<CreateCompanyServicesResponse> | CreateCompanyServicesResponse;
 
+  updateCompanyServiceStatus(
+    request: UpdateCompanyServiceStatusRequest,
+  ): Promise<UpdateCompanyServiceResponse> | Observable<UpdateCompanyServiceResponse> | UpdateCompanyServiceResponse;
+
+  updateCompanyService(
+    request: UpdateCompanyServiceRequest,
+  ): Promise<UpdateCompanyServiceResponse> | Observable<UpdateCompanyServiceResponse> | UpdateCompanyServiceResponse;
+
+  deleteCompanyService(
+    request: DeleteCompanyServiceRequest,
+  ): Promise<DeleteCompanyServiceResponse> | Observable<DeleteCompanyServiceResponse> | DeleteCompanyServiceResponse;
+
+  getCompanyServices(
+    request: GetCompanyServicesRequest,
+  ): Promise<GetCompanyServicesResponse> | Observable<GetCompanyServicesResponse> | GetCompanyServicesResponse;
+
+  getCompanyService(
+    request: GetCompanyServiceRequest,
+  ): Promise<GetCompanyServiceResponse> | Observable<GetCompanyServiceResponse> | GetCompanyServiceResponse;
+
+  searchCompanyServices(
+    request: SearchCompanyServicesRequest,
+  ): Promise<GetCompanyServicesResponse> | Observable<GetCompanyServicesResponse> | GetCompanyServicesResponse;
+
   createServiceBranch(
     request: CreateServiceBranchRequest,
   ): Promise<CreateServiceBranchResponse> | Observable<CreateServiceBranchResponse> | CreateServiceBranchResponse;
@@ -360,6 +560,27 @@ export interface OperationServiceController {
   updateServiceType(
     request: UpdateServiceTypeRequest,
   ): Promise<CreateServiceTypeResponse> | Observable<CreateServiceTypeResponse> | CreateServiceTypeResponse;
+
+  /** Business Types Management */
+
+  getAdminBusinessTypes(
+    request: EmptyRequest,
+  ): Promise<GetBusinessTypesResponse> | Observable<GetBusinessTypesResponse> | GetBusinessTypesResponse;
+
+  getBusinessTypes(
+    request: EmptyRequest,
+  ): Promise<GetBusinessTypesResponse> | Observable<GetBusinessTypesResponse> | GetBusinessTypesResponse;
+
+  createBusinessType(
+    request: CreateBusinessTypeRequest,
+  ): Promise<CreateBusinessTypeResponse> | Observable<CreateBusinessTypeResponse> | CreateBusinessTypeResponse;
+
+  updateBusinessTypeActiveStatus(
+    request: UpdateBusinessTypeActiveStatusRequest,
+  ):
+    | Promise<UpdateBusinessTypeActiveStatusResponse>
+    | Observable<UpdateBusinessTypeActiveStatusResponse>
+    | UpdateBusinessTypeActiveStatusResponse;
 
   fetchServiceTypes(
     request: EmptyRequest,
@@ -412,11 +633,21 @@ export function OperationServiceControllerMethods() {
       "sayHello",
       "healthCheck",
       "createCompanyServices",
+      "updateCompanyServiceStatus",
+      "updateCompanyService",
+      "deleteCompanyService",
+      "getCompanyServices",
+      "getCompanyService",
+      "searchCompanyServices",
       "createServiceBranch",
       "upsertBusinessHours",
       "getServiceTypes",
       "createServiceType",
       "updateServiceType",
+      "getAdminBusinessTypes",
+      "getBusinessTypes",
+      "createBusinessType",
+      "updateBusinessTypeActiveStatus",
       "fetchServiceTypes",
       "getTableLocations",
       "getBedSizes",

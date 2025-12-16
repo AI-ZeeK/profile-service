@@ -12,6 +12,14 @@ import { Struct } from "./google/protobuf/struct.pb";
 
 export const protobufPackage = "profile";
 
+export enum SessionSource {
+  WEB = 0,
+  MOBILE = 1,
+  TABLET = 2,
+  OTHER = 3,
+  UNRECOGNIZED = -1,
+}
+
 export enum rolesEnum {
   CLIENT = 0,
   BUSINESS_USER = 1,
@@ -26,6 +34,40 @@ export enum SendOtpType {
   ADMIN_SIGNIN = 3,
   FORGOT_PASSWORD = 4,
   UNRECOGNIZED = -1,
+}
+
+export interface StaffDetailsRequest {
+  staffId: string;
+  companyId: string;
+}
+
+export interface ManyStaffDetailsRequest {
+  staffIds: string[];
+  companyId: string;
+}
+
+export interface Staff {
+  staffId: string;
+  companyId: string;
+  userId: string;
+  branchId?: string | undefined;
+  email: string;
+  designation?: string | undefined;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffDetailsResponse {
+  success: boolean;
+  error?: string | undefined;
+  staff?: Staff | undefined;
+}
+
+export interface ManyStaffDetailsResponse {
+  success: boolean;
+  error?: string | undefined;
+  staffs: Staff[];
 }
 
 export interface ValidateAccountRequest {
@@ -111,6 +153,8 @@ export interface VerifyOtpRequest {
   token: string;
   otp: string;
   type: SendOtpType;
+  deviceInfo: string;
+  source: SessionSource;
 }
 
 export interface SendOtpResponse {
@@ -149,10 +193,11 @@ export interface RegisterRequest {
 
 export interface LogoutRequest {
   userId: string;
+  source: SessionSource;
 }
 
 export interface RefreshTokenRequest {
-  userId: string;
+  token: string;
 }
 
 export interface GetUserRequest {
@@ -416,6 +461,10 @@ export interface ProfileServiceClient {
   fetchOrganizationRoles(request: OrganizationRoleIdRequest): Observable<FetchOrganizationRolesResponse>;
 
   fetchOrganizationRolesCount(request: OrganizationRoleIdRequest): Observable<FetchOrganizationRolesCountResponse>;
+
+  getStaffDetails(request: StaffDetailsRequest): Observable<StaffDetailsResponse>;
+
+  getManyStaffDetails(request: ManyStaffDetailsRequest): Observable<ManyStaffDetailsResponse>;
 }
 
 /** 👤 Profile Service - handles user profiles and user management */
@@ -491,6 +540,14 @@ export interface ProfileServiceController {
     | Promise<FetchOrganizationRolesCountResponse>
     | Observable<FetchOrganizationRolesCountResponse>
     | FetchOrganizationRolesCountResponse;
+
+  getStaffDetails(
+    request: StaffDetailsRequest,
+  ): Promise<StaffDetailsResponse> | Observable<StaffDetailsResponse> | StaffDetailsResponse;
+
+  getManyStaffDetails(
+    request: ManyStaffDetailsRequest,
+  ): Promise<ManyStaffDetailsResponse> | Observable<ManyStaffDetailsResponse> | ManyStaffDetailsResponse;
 }
 
 export function ProfileServiceControllerMethods() {
@@ -513,6 +570,8 @@ export function ProfileServiceControllerMethods() {
       "createOrUpdateBusinessUserRole",
       "fetchOrganizationRoles",
       "fetchOrganizationRolesCount",
+      "getStaffDetails",
+      "getManyStaffDetails",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

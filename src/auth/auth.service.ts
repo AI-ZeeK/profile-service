@@ -13,7 +13,7 @@ import { UserService } from 'src/user/user.service';
 import { CommunicationService } from 'src/modules/communication/communication.service';
 import { OrganizationsService } from 'src/modules/organizations/organizations.service';
 import { ROLES_ENUM } from 'prisma/enum';
-import { VerificationPurpose } from '@prisma/client';
+import { SessionSource, VerificationPurpose } from '@prisma/client';
 import {
   LogoutRequest,
   RefreshTokenRequest,
@@ -23,9 +23,10 @@ import {
   VerifyOtpRequest,
 } from 'src/shared/dependencies/profile.pb';
 import { RpcException } from '@nestjs/microservices';
-import { Helpers } from '@djengo/proto-contracts';
+import { Helpers, LoginRequest } from '@djengo/proto-contracts';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
+import { Env } from 'src/config/configuration';
 
 @Injectable()
 export class AuthService {
@@ -42,12 +43,16 @@ export class AuthService {
   async validateRefreshToken({
     user_id,
     refresh_token,
+    source,
   }: {
     user_id: string;
     refresh_token: string;
+    source: string;
   }) {
     try {
-      const user = await this.prisma.user.findUnique({ where: { user_id } });
+      const user = await this.prisma.userSession.findFirst({
+        where: { user_id, source: SessionSource[source] || SessionSource.WEB },
+      });
 
       if (!user || !user.refresh_token) {
         return null;
@@ -60,6 +65,8 @@ export class AuthService {
 
       const newAccessToken = this.generateAccessToken({
         user_id,
+        source,
+        device_info: user.device_info,
       });
 
       return {
@@ -72,24 +79,45 @@ export class AuthService {
     }
   }
 
-  async generateAccessToken({ user_id }: { user_id: string }) {
+  async generateAccessToken({
+    user_id,
+    device_info,
+    source,
+  }: {
+    user_id: string;
+    device_info: string;
+    source: string;
+  }) {
     const payload = {
       user_id,
+      source,
     };
 
     const access_token = this.jwtService.sign(payload, {
-      secret: process.env.JWT_ACCESS_SECRET,
+      secret: Env.JWT_ACCESS_SECRET,
       expiresIn: '3h',
     });
 
     const refresh_token = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET,
+      secret: Env.JWT_REFRESH_SECRET,
       expiresIn: '7d',
     });
-    await this.prisma.user.update({
-      where: { user_id },
-      data: {
+    await this.prisma.userSession.upsert({
+      where: {
+        unique_session: {
+          user_id,
+          source: SessionSource[source] || SessionSource.WEB,
+        },
+      },
+      update: {
         refresh_token: refresh_token,
+        device_info: device_info,
+      },
+      create: {
+        refresh_token: refresh_token,
+        user_id: user_id,
+        device_info: device_info,
+        source: SessionSource[source] || SessionSource.WEB,
       },
     });
 
@@ -102,7 +130,7 @@ export class AuthService {
     };
 
     const auth_token = this.jwtService.sign(payload, {
-      secret: process.env.JWT_AUTH_SECRET,
+      secret: Env.JWT_AUTH_SECRET,
       expiresIn: '10m',
     });
 
@@ -351,7 +379,7 @@ export class AuthService {
   //     throw new BadRequestException(error.message);
   //   }
   // }
-  async login({ email, password }: { email: string; password: string }) {
+  async login({ email, password }: LoginRequest) {
     try {
       // const user = await this.prisma.user.findUnique({
       //   where: {
@@ -419,16 +447,18 @@ export class AuthService {
     }
   }
 
-  async logout({ userId }: LogoutRequest) {
+  async logout({ userId, source }: LogoutRequest) {
     try {
-      console.log('LOGOUT REQUEST', userId);
-      await this.prisma.user.update({
-        where: { user_id: userId },
-        data: { refresh_token: '' },
+      console.log('LOGOUT REQUEST', userId, source, SessionSource[source]);
+      await this.prisma.userSession.deleteMany({
+        where: {
+          user_id: userId,
+          source: SessionSource[source] || SessionSource.WEB,
+        },
       });
-      await this.communicationService.clearUserPushSubscriptions({
-        userId,
-      });
+      // await this.communicationService.clearUserPushSubscriptions({
+      //   userId,
+      // });
       this.logger.log(
         `User ${userId} logged out and push subscriptions cleared`,
       );
@@ -441,7 +471,7 @@ export class AuthService {
   async sendOtp({ token, type }: SendOtpRequest) {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_AUTH_SECRET,
+        secret: Env.JWT_AUTH_SECRET,
       });
       const user = await this.prisma.user.findUnique({
         where: {
@@ -482,10 +512,10 @@ export class AuthService {
     }
   }
 
-  async verifyOtp({ otp, token, type }: VerifyOtpRequest) {
+  async verifyOtp({ otp, token, type, deviceInfo }: VerifyOtpRequest) {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_AUTH_SECRET,
+        secret: Env.JWT_AUTH_SECRET,
       });
       const verification = await this.prisma.verification.findFirst({
         where: { user_id: payload.user_id, otp_code: otp },
@@ -519,6 +549,12 @@ export class AuthService {
 
       const { access_token } = await this.generateAccessToken({
         user_id: payload.user_id,
+        source: payload.source,
+        device_info: deviceInfo,
+      });
+      await this.prisma.user.update({
+        where: { user_id: payload.user_id },
+        data: { last_login: new Date() },
       });
       const user = await this.userService.findOne({
         user_id: payload.user_id,
@@ -538,28 +574,34 @@ export class AuthService {
 
   async refreshToken(data: RefreshTokenRequest) {
     try {
-      if (!data.userId) {
+      if (!data.token) {
         throw new RpcException({
           code: 401,
           message: 'Invalid user',
         });
       }
-      const refreshToken = await this.prisma.user.findUnique({
-        where: { user_id: data.userId },
+      const session = await this.prisma.userSession.findFirst({
+        where: { refresh_token: data.token },
         select: { refresh_token: true },
       });
-      if (!refreshToken) {
+      if (!session) {
         throw new RpcException({
           code: 401,
           message: 'Invalid refresh token',
         });
       }
-      const payload = await this.jwtService.verifyAsync(
-        refreshToken.refresh_token,
-        {
-          secret: process.env.JWT_REFRESH_SECRET,
-        },
-      );
+      let payload: any;
+      try {
+        payload = await this.jwtService.verifyAsync(session.refresh_token, {
+          secret: Env.JWT_ACCESS_SECRET,
+        });
+      } catch {
+        payload = this.jwtService.decode(session.refresh_token);
+        if (!payload || !payload.user_id) {
+          throw new UnauthorizedException('Invalid access token');
+        }
+      }
+
       // console.log('PAYLOAD', payload);
       const user = await this.prisma.user.findUnique({
         where: { user_id: payload.user_id },
@@ -574,6 +616,8 @@ export class AuthService {
 
       const { access_token } = await this.generateAccessToken({
         user_id: user.user_id,
+        source: payload.source,
+        device_info: payload.device_info,
       });
 
       return { user, accessToken: access_token };
