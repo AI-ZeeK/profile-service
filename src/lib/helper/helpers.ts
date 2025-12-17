@@ -48,4 +48,25 @@ export class Helpers {
 
     return `${prefix}-${randomSuffix}`;
   }
+
+  static generateUserSlug(): string {
+    // Generate 3 random uppercase letters
+    const letters = Array.from({ length: 3 }, () =>
+      String.fromCharCode(65 + Math.floor(Math.random() * 26)),
+    ).join('');
+
+    // Generate 4 random digits
+    const digits = Math.floor(1000 + Math.random() * 9000).toString();
+
+    // Get current date and encode as 4 uppercase letters (e.g., Dec 16, 2025 -> D16Z)
+    // We'll use: 1st letter of month, 2-digit day, last char of year (base36)
+    const now = new Date();
+    const months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+    const monthLetter = months[now.getMonth()];
+    const day = now.getDate().toString().padStart(2, '0');
+    const yearChar = now.getFullYear().toString(36).toUpperCase().slice(-1); // base36 for variety
+    const datestamp = `${monthLetter}${day}${yearChar}`;
+
+    return `${letters}-${digits}-${datestamp}`;
+  }
 }

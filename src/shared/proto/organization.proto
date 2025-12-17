@@ -35,6 +35,21 @@ service OrganizationService {
   rpc CreateBusinessUserRole(CreateBusinessUserRoleRequest) returns (UtilitiesResponse);
   rpc UpdateBusinessUserRole(CreateBusinessUserRoleRequest) returns (UtilitiesResponse);
 
+  rpc CreateRole(CreateRoleRequest) returns (UtilitiesResponse);
+  rpc UpdateRole(UpdateRoleRequest) returns (UtilitiesResponse);
+  rpc GetCompanyRoles(CompanyRolesRequest) returns (FetchRolesResponse);
+  rpc GetCompanyRole(CompanyRoleRequest) returns (FetchRoleResponse);
+
+}
+
+message CompanyRoleRequest {
+  string company_id = 1;
+  string role_id = 2;
+}
+message CompanyRolesRequest {
+  string company_id = 1;
+  optional string branch_id = 2;
+  RoleType role_type = 3;
 }
 
 message UpdateCompanyDetailsRequest {
@@ -107,6 +122,33 @@ message CreateBusinessUserRoleRequest {
   repeated Permission permissions = 5;
   string creator_id = 6;
 }
+enum RoleType {
+  STAFF_ROLE = 0;
+  BUSINESS_USER_ROLE = 1;
+}
+message CreateRoleRequest {
+  string company_id = 1;
+  string role_name = 2;
+  string description = 3;
+  repeated string staff_ids = 4;
+  repeated string business_user_ids = 5;
+  repeated Permission permissions = 6;
+  string creator_id = 7;
+  RoleType role_type = 8;
+  optional string branch_id = 9;
+}
+message UpdateRoleRequest {
+  string role_id = 1;
+  string company_id = 2;
+  string role_name = 3;
+  string description = 4;
+  repeated string staff_ids = 5;
+  repeated string business_user_ids = 6;
+  repeated Permission permissions = 7;
+  string creator_id = 8;
+  RoleType role_type = 9;
+  optional string branch_id = 10;
+}
 
 message Permission {
   string permission_name = 1;
@@ -135,7 +177,6 @@ message ServiceType {
 }
 // � RESPONSE MESSAGES
 message BusinessUserRole {
-  string business_user_role_id = 1;
   string business_user_id = 2;
   string organization_role_id = 3;
   bool is_active = 4;
@@ -143,6 +184,13 @@ message BusinessUserRole {
   string created_at = 6;
   string updated_at = 7;
   string deleted_at = 8;
+}
+
+message StaffCompanyRole {
+  string staff_id = 2;
+  string company_role_id = 3;
+  bool is_active = 4;
+  OrganizationRole company_role = 5;
 }
 
 message EntityPermission {
@@ -168,14 +216,20 @@ message EntityPermission {
 message OrganizationRole {
   string role_id = 1;
   string organization_id = 2;
-  string branch_id = 3;
-  string name = 4;
-  string slug = 5;
-  string description = 6;
-  bool is_active = 7;
-  int32 business_user_roles_count = 8;
-  repeated BusinessUserRole business_user_roles = 9;
-  repeated EntityPermission entity_permissions = 10;
+  string company_id = 3;
+  string branch_id = 4;
+  string name = 5;
+  string slug = 6;
+  string description = 7;
+  bool is_active = 8;
+  int32 business_user_roles_count = 9;
+  bool is_org_level = 10;
+  string created_at = 11;
+  string updated_at = 12;
+  string deleted_at = 13;
+  repeated BusinessUserRole business_user_roles = 14;
+  repeated StaffCompanyRole staff_company_roles = 15;
+  repeated EntityPermission entity_permissions = 16 ;
 }
 
 

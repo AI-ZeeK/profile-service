@@ -24,6 +24,7 @@ datasource db {
 
 model User {
   user_id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_slug           String?
   first_name          String?     @default("") @db.VarChar(50)
   last_name           String?     @default("") @db.VarChar(50)
   password            String?     @default("")
@@ -83,9 +84,9 @@ model UserSession {
 
   user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
+  @@unique([user_id, source], name: "unique_session")
   @@index([user_id])
   @@index([is_active])
-  @@unique([user_id, source], name: "unique_session")
   @@map("user_sessions")
   @@schema("profiles")
 }

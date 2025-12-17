@@ -34,6 +34,69 @@ service ProfileService {
 
   rpc getStaffDetails(StaffDetailsRequest) returns (StaffDetailsResponse);
   rpc getManyStaffDetails(ManyStaffDetailsRequest) returns (ManyStaffDetailsResponse);
+  
+  
+  rpc AdminGetUsers(GetUsersRequest) returns (GetUsersResponse); 
+  rpc AdminUsersAnalytics(AdminUsersAnalyticsRequest) returns (AdminUsersAnalyticsResponse);
+}
+
+enum Timeline {
+  _1m = 0;
+  _3m = 1;
+  _6m = 2;
+  _1y = 3;
+
+}
+
+
+message AdminUsersAnalyticsRequest {
+  optional Timeline timeline = 1;
+  optional string start_date = 2;
+  optional string end_date = 3;
+  optional string role_id = 4;
+}
+
+message Analytic {
+  int32 value = 1;
+  string trend = 2;
+  string percentage = 3;
+  
+}
+
+message AdminUsersAnalyticsResponse {
+  Analytic total_users = 1;
+  Analytic new_users = 2;
+  Analytic active_users = 3;
+  Analytic business_users = 4;
+  Analytic pending_users = 5;
+  Analytic deactivated_users = 6;
+  Analytic high_value_users = 7;
+  Analytic at_risk_users = 8;
+}
+
+message GetUsersRequest {
+  string search = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  string sort_by = 4;
+  string sort_order = 5;
+}
+
+message TableMeta {
+  int32 total = 1;
+  int32 current_page = 2;
+  int32 page_size = 3;
+  int32 total_pages = 4;
+  int32 next_page = 5;
+  int32 prev_page = 6;
+
+}
+
+message GetUsersResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated User users = 3;
+  TableMeta meta = 4;
 }
 
 
@@ -293,7 +356,7 @@ message GetUserByEmailResponse {
 message UpdateUserStatusResponse {
   bool success = 1;
   optional string error = 2;
-  optional BasicUser user = 3;
+  optional User user = 3;
 }
 
 message GetUserContactsResponse {
@@ -306,7 +369,7 @@ message GetUserContactsResponse {
 message UpdateUserResponse {
   bool success = 1;
   optional string error = 2;
-  optional BasicUser user = 3;
+  optional User user = 3;
 }
 
 // 🏗️ DATA MODELS
@@ -322,24 +385,26 @@ message User {
   optional string last_seen = 8;
   string created_at = 9;
   string updated_at = 10;
-  bool email_verified = 11;
-  optional Address address = 12;
-  optional UserRole user_role = 13;
-  optional BusinessUser business_user = 14;
+  string last_login = 11;
+  bool email_verified = 12;
+  optional Address address = 13;
+  optional UserRole user_role = 14;
+  repeated UserRole user_roles = 15;
+  optional BusinessUser business_user = 16;
 }
 
-message BasicUser {
-  string user_id = 1;
-  string email = 2;
-  optional string username = 3;
-  optional string first_name = 4;
-  optional string last_name = 5;
-  optional string phone_number = 6;
-  optional string last_seen = 7;
-  string created_at = 8;
-  string updated_at = 9;
-  bool email_verified = 10;
-}
+// message BasicUser {
+//   string user_id = 1;
+//   string email = 2;
+//   optional string username = 3;
+//   optional string first_name = 4;
+//   optional string last_name = 5;
+//   optional string phone_number = 6;
+//   optional string last_seen = 7;
+//   string created_at = 8;
+//   string updated_at = 9;
+//   bool email_verified = 10;
+// }
 
 message Contact {
   string user_id = 1;
@@ -384,9 +449,10 @@ message Address {
 }
 
 message UserRole {
-  string user_role_id = 1;
+  string user_id = 1;
   string role_name = 2;
   bool is_active = 3;
+ Role role = 4;
 }
 
 

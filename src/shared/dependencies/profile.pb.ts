@@ -12,6 +12,14 @@ import { Struct } from "./google/protobuf/struct.pb";
 
 export const protobufPackage = "profile";
 
+export enum Timeline {
+  _1m = 0,
+  _3m = 1,
+  _6m = 2,
+  _1y = 3,
+  UNRECOGNIZED = -1,
+}
+
 export enum SessionSource {
   WEB = 0,
   MOBILE = 1,
@@ -34,6 +42,54 @@ export enum SendOtpType {
   ADMIN_SIGNIN = 3,
   FORGOT_PASSWORD = 4,
   UNRECOGNIZED = -1,
+}
+
+export interface AdminUsersAnalyticsRequest {
+  timeline?: Timeline | undefined;
+  startDate?: string | undefined;
+  endDate?: string | undefined;
+  roleId?: string | undefined;
+}
+
+export interface Analytic {
+  value: number;
+  trend: string;
+  percentage: string;
+}
+
+export interface AdminUsersAnalyticsResponse {
+  totalUsers: Analytic | undefined;
+  newUsers: Analytic | undefined;
+  activeUsers: Analytic | undefined;
+  businessUsers: Analytic | undefined;
+  pendingUsers: Analytic | undefined;
+  deactivatedUsers: Analytic | undefined;
+  highValueUsers: Analytic | undefined;
+  atRiskUsers: Analytic | undefined;
+}
+
+export interface GetUsersRequest {
+  search: string;
+  page: number;
+  pageSize: number;
+  sortBy: string;
+  sortOrder: string;
+}
+
+export interface TableMeta {
+  total: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+  nextPage: number;
+  prevPage: number;
+}
+
+export interface GetUsersResponse {
+  success: boolean;
+  error?: string | undefined;
+  users: User[];
+  meta: TableMeta | undefined;
 }
 
 export interface StaffDetailsRequest {
@@ -265,7 +321,7 @@ export interface GetUserByEmailResponse {
 export interface UpdateUserStatusResponse {
   success: boolean;
   error?: string | undefined;
-  user?: BasicUser | undefined;
+  user?: User | undefined;
 }
 
 export interface GetUserContactsResponse {
@@ -278,7 +334,7 @@ export interface GetUserContactsResponse {
 export interface UpdateUserResponse {
   success: boolean;
   error?: string | undefined;
-  user?: BasicUser | undefined;
+  user?: User | undefined;
 }
 
 export interface User {
@@ -292,23 +348,12 @@ export interface User {
   lastSeen?: string | undefined;
   createdAt: string;
   updatedAt: string;
+  lastLogin: string;
   emailVerified: boolean;
   address?: Address | undefined;
   userRole?: UserRole | undefined;
+  userRoles: UserRole[];
   businessUser?: BusinessUser | undefined;
-}
-
-export interface BasicUser {
-  userId: string;
-  email: string;
-  username?: string | undefined;
-  firstName?: string | undefined;
-  lastName?: string | undefined;
-  phoneNumber?: string | undefined;
-  lastSeen?: string | undefined;
-  createdAt: string;
-  updatedAt: string;
-  emailVerified: boolean;
 }
 
 export interface Contact {
@@ -354,9 +399,10 @@ export interface Address {
 }
 
 export interface UserRole {
-  userRoleId: string;
+  userId: string;
   roleName: string;
   isActive: boolean;
+  role: Role | undefined;
 }
 
 export interface Company {
@@ -465,6 +511,10 @@ export interface ProfileServiceClient {
   getStaffDetails(request: StaffDetailsRequest): Observable<StaffDetailsResponse>;
 
   getManyStaffDetails(request: ManyStaffDetailsRequest): Observable<ManyStaffDetailsResponse>;
+
+  adminGetUsers(request: GetUsersRequest): Observable<GetUsersResponse>;
+
+  adminUsersAnalytics(request: AdminUsersAnalyticsRequest): Observable<AdminUsersAnalyticsResponse>;
 }
 
 /** 👤 Profile Service - handles user profiles and user management */
@@ -548,6 +598,12 @@ export interface ProfileServiceController {
   getManyStaffDetails(
     request: ManyStaffDetailsRequest,
   ): Promise<ManyStaffDetailsResponse> | Observable<ManyStaffDetailsResponse> | ManyStaffDetailsResponse;
+
+  adminGetUsers(request: GetUsersRequest): Promise<GetUsersResponse> | Observable<GetUsersResponse> | GetUsersResponse;
+
+  adminUsersAnalytics(
+    request: AdminUsersAnalyticsRequest,
+  ): Promise<AdminUsersAnalyticsResponse> | Observable<AdminUsersAnalyticsResponse> | AdminUsersAnalyticsResponse;
 }
 
 export function ProfileServiceControllerMethods() {
@@ -572,6 +628,8 @@ export function ProfileServiceControllerMethods() {
       "fetchOrganizationRolesCount",
       "getStaffDetails",
       "getManyStaffDetails",
+      "adminGetUsers",
+      "adminUsersAnalytics",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

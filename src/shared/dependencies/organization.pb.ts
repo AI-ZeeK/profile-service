@@ -10,6 +10,23 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "organization";
 
+export enum RoleType {
+  STAFF_ROLE = 0,
+  BUSINESS_USER_ROLE = 1,
+  UNRECOGNIZED = -1,
+}
+
+export interface CompanyRoleRequest {
+  companyId: string;
+  roleId: string;
+}
+
+export interface CompanyRolesRequest {
+  companyId: string;
+  branchId?: string | undefined;
+  roleType: RoleType;
+}
+
 export interface UpdateCompanyDetailsRequest {
   companyId: string;
   name: string;
@@ -78,6 +95,31 @@ export interface CreateBusinessUserRoleRequest {
   creatorId: string;
 }
 
+export interface CreateRoleRequest {
+  companyId: string;
+  roleName: string;
+  description: string;
+  staffIds: string[];
+  businessUserIds: string[];
+  permissions: Permission[];
+  creatorId: string;
+  roleType: RoleType;
+  branchId?: string | undefined;
+}
+
+export interface UpdateRoleRequest {
+  roleId: string;
+  companyId: string;
+  roleName: string;
+  description: string;
+  staffIds: string[];
+  businessUserIds: string[];
+  permissions: Permission[];
+  creatorId: string;
+  roleType: RoleType;
+  branchId?: string | undefined;
+}
+
 export interface Permission {
   permissionName: string;
   state: boolean;
@@ -103,7 +145,6 @@ export interface ServiceType {
 
 /** � RESPONSE MESSAGES */
 export interface BusinessUserRole {
-  businessUserRoleId: string;
   businessUserId: string;
   organizationRoleId: string;
   isActive: boolean;
@@ -111,6 +152,13 @@ export interface BusinessUserRole {
   createdAt: string;
   updatedAt: string;
   deletedAt: string;
+}
+
+export interface StaffCompanyRole {
+  staffId: string;
+  companyRoleId: string;
+  isActive: boolean;
+  companyRole: OrganizationRole | undefined;
 }
 
 export interface EntityPermission {
@@ -136,13 +184,19 @@ export interface PermissionResponse {
 export interface OrganizationRole {
   roleId: string;
   organizationId: string;
+  companyId: string;
   branchId: string;
   name: string;
   slug: string;
   description: string;
   isActive: boolean;
   businessUserRolesCount: number;
+  isOrgLevel: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string;
   businessUserRoles: BusinessUserRole[];
+  staffCompanyRoles: StaffCompanyRole[];
   entityPermissions: EntityPermission[];
 }
 
@@ -335,6 +389,14 @@ export interface OrganizationServiceClient {
   createBusinessUserRole(request: CreateBusinessUserRoleRequest): Observable<UtilitiesResponse>;
 
   updateBusinessUserRole(request: CreateBusinessUserRoleRequest): Observable<UtilitiesResponse>;
+
+  createRole(request: CreateRoleRequest): Observable<UtilitiesResponse>;
+
+  updateRole(request: UpdateRoleRequest): Observable<UtilitiesResponse>;
+
+  getCompanyRoles(request: CompanyRolesRequest): Observable<FetchRolesResponse>;
+
+  getCompanyRole(request: CompanyRoleRequest): Observable<FetchRoleResponse>;
 }
 
 /** 🏢 Organization Service - handles organization and branch management */
@@ -414,6 +476,22 @@ export interface OrganizationServiceController {
   updateBusinessUserRole(
     request: CreateBusinessUserRoleRequest,
   ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  createRole(
+    request: CreateRoleRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  updateRole(
+    request: UpdateRoleRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  getCompanyRoles(
+    request: CompanyRolesRequest,
+  ): Promise<FetchRolesResponse> | Observable<FetchRolesResponse> | FetchRolesResponse;
+
+  getCompanyRole(
+    request: CompanyRoleRequest,
+  ): Promise<FetchRoleResponse> | Observable<FetchRoleResponse> | FetchRoleResponse;
 }
 
 export function OrganizationServiceControllerMethods() {
@@ -433,6 +511,10 @@ export function OrganizationServiceControllerMethods() {
       "fetchOrgRole",
       "createBusinessUserRole",
       "updateBusinessUserRole",
+      "createRole",
+      "updateRole",
+      "getCompanyRoles",
+      "getCompanyRole",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

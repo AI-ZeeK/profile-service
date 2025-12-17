@@ -10,6 +10,8 @@ import {
   ValidateAccountRequest,
   GetUserContactsRequest,
   UpdateUserStatusRequest,
+  GetUsersRequest,
+  AdminUsersAnalyticsRequest,
 } from './shared/dependencies/profile.pb';
 import { BusinessUserService } from './user/business-user.service';
 
@@ -22,7 +24,17 @@ export class AppController {
     private readonly businessUserService: BusinessUserService,
   ) {}
 
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'AdminUsersAnalytics')
+  async AdminUsersAnalytics(data: AdminUsersAnalyticsRequest) {
+    return await this.userService.AdminGetUserAnalytics(data);
+  }
+
   // 👤 User Management
+
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'AdminGetUsers')
+  async AdminGetUsers(data: GetUsersRequest) {
+    return await this.userService.adminGetUsers(data);
+  }
 
   @GrpcMethod(PROFILE_SERVICE_NAME, 'GetUser')
   async getUser(data: GetUserRequest) {

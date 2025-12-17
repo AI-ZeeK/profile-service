@@ -251,6 +251,7 @@ export class AuthService {
       user = await this.prisma.user.create({
         data: {
           email: email.toLowerCase(),
+          user_slug: Helpers.generateUserSlug(),
           password: hashed_password, // Store the hashed password
           ...(phoneNumber ? { phone_number: phoneNumber } : {}),
           user_roles: {
