@@ -40,6 +40,10 @@ service OrganizationService {
   rpc GetCompanyRoles(CompanyRolesRequest) returns (FetchRolesResponse);
   rpc GetCompanyRole(CompanyRoleRequest) returns (FetchRoleResponse);
 
+  // Analytics
+  rpc GetOrganizationAnalytics(OrganizationAnalyticsRequest) returns (OrganizationAnalyticsResponse);
+  rpc TotalOrganizations(EmptyRequest) returns (TotalOrganizationsResponse);
+  rpc TopPerformingOrganizations(TopPerformingOrganizationsRequest) returns (TopPerformingOrganizationsResponse);
 }
 
 message CompanyRoleRequest {
@@ -390,3 +394,78 @@ message Branch {
 //   MainBranch main_branch = 10;
 //   repeated BusinessType business_types = 11;
 // }
+
+// Analytics Messages
+message TrendData {
+  string name = 1;
+  int32 value = 2;
+}
+
+message OrganizationAnalyticsRequest {
+  string timeline = 1;
+  optional string start_date = 2;
+  optional string end_date = 3;
+}
+
+message OrganizationMetric {
+  int32 count = 1;
+  double percentage = 2;
+  string trend = 3;
+}
+
+message OrganizationMetricWithTrend {
+  int32 count = 1;
+  double percentage = 2;
+  string trend = 3;
+  repeated TrendData trend_data = 4;
+}
+
+message TransactionMetric {
+  int32 value = 1;
+  double percentage = 2;
+  string trend = 3;
+}
+
+message OrganizationAnalyticsResponse {
+  OrganizationMetricWithTrend total_organizations = 1;
+  OrganizationMetric active_organizations = 2;
+  OrganizationMetric pending_organizations = 3;
+  OrganizationMetric inactive_organizations = 4;
+  OrganizationMetric high_revenue_organizations = 5;
+  OrganizationMetric large_organizations = 6;
+  TransactionMetric average_transactions = 7;
+}
+
+message TotalOrganizationsResponse {
+  int32 count = 1;
+  double percentage = 2;
+  string trend = 3;
+  repeated TrendData trend_data = 4;
+}
+
+message TopPerformingOrganizationsRequest {
+  optional int32 limit = 1;
+}
+
+message OrganizationWithCounts {
+  string organization_id = 1;
+  string name = 2;
+  string phone_number = 3;
+  string email = 4;
+  string registration_number = 5;
+  string registration_date = 6;
+  bool is_active = 7;
+  bool is_multi_company = 8;
+  string creator_id = 9;
+  string created_at = 10;
+  string updated_at = 11;
+  optional string deleted_at = 12;
+  int32 staff_count = 13;
+  int32 business_user_count = 14;
+  int32 access_control_count = 15;
+  int32 companies_count = 16;
+}
+
+message TopPerformingOrganizationsResponse {
+  repeated OrganizationWithCounts top_organizations = 1;
+}

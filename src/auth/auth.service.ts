@@ -599,7 +599,10 @@ export class AuthService {
       } catch {
         payload = this.jwtService.decode(session.refresh_token);
         if (!payload || !payload.user_id) {
-          throw new UnauthorizedException('Invalid access token');
+          throw new RpcException({
+            code: 401,
+            message: 'Invalid access token',
+          });
         }
       }
 

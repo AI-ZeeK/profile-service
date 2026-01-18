@@ -13,6 +13,7 @@ import { AddressService } from 'src/modules/address/address.service';
 import { Logger } from '@nestjs/common';
 import {
   AdminUsersAnalyticsRequest,
+  GetUserCountForOrganizationRequest,
   GetUserRequest,
   GetUsersRequest,
   Timeline,
@@ -490,6 +491,38 @@ export class UserService {
     }
   }
 
+  async getUserCountForOrganization({
+    organizationId,
+    isActive = true,
+  }: GetUserCountForOrganizationRequest) {
+    try {
+      if (!organizationId) {
+        throw new RpcException({
+          code: 400,
+          message: 'Organization ID is required',
+        });
+      }
+
+      const count = await this.prisma.user.count({
+        where: {
+          business_users: {
+            some: {
+              organization_id: organizationId,
+              is_active: isActive,
+            },
+          },
+        },
+      });
+
+      return { count };
+    } catch (error) {
+      throw new RpcException({
+        code: 500,
+        message: error.message,
+      });
+    }
+  }
+
   /**
    * Returns analytics for user dashboard cards, supporting timeline and role filters.
    * @param options { timeline: '1m'|'3m'|'6m'|'1y'|null, startDate?: string, endDate?: string, role?: string }
@@ -498,136 +531,44 @@ export class UserService {
     try {
       const { timeline, startDate, endDate, roleId } = options;
       // Date range filter
-      let dateFrom: Date | undefined;
-      let dateTo: Date | undefined;
-      let prevDateFrom: Date | undefined;
-      let prevDateTo: Date | undefined;
-      const now = new Date();
-      if (timeline) {
-        switch (timeline as Timeline) {
-          case Timeline._1m:
-            dateFrom = new Date(
-              now.getFullYear(),
-              now.getMonth() - 1,
-              now.getDate(),
-            );
-            prevDateFrom = new Date(
-              now.getFullYear(),
-              now.getMonth() - 2,
-              now.getDate(),
-            );
-            prevDateTo = new Date(
-              now.getFullYear(),
-              now.getMonth() - 1,
-              now.getDate(),
-            );
-            break;
-          case Timeline._3m:
-            dateFrom = new Date(
-              now.getFullYear(),
-              now.getMonth() - 3,
-              now.getDate(),
-            );
-            prevDateFrom = new Date(
-              now.getFullYear(),
-              now.getMonth() - 6,
-              now.getDate(),
-            );
-            prevDateTo = new Date(
-              now.getFullYear(),
-              now.getMonth() - 3,
-              now.getDate(),
-            );
-            break;
-          case Timeline._6m:
-            dateFrom = new Date(
-              now.getFullYear(),
-              now.getMonth() - 6,
-              now.getDate(),
-            );
-            prevDateFrom = new Date(
-              now.getFullYear(),
-              now.getMonth() - 12,
-              now.getDate(),
-            );
-            prevDateTo = new Date(
-              now.getFullYear(),
-              now.getMonth() - 6,
-              now.getDate(),
-            );
-            break;
-          case Timeline._1y:
-            dateFrom = new Date(
-              now.getFullYear() - 1,
-              now.getMonth(),
-              now.getDate(),
-            );
-            prevDateFrom = new Date(
-              now.getFullYear() - 2,
-              now.getMonth(),
-              now.getDate(),
-            );
-            prevDateTo = new Date(
-              now.getFullYear() - 1,
-              now.getMonth(),
-              now.getDate(),
-            );
-            break;
-        }
-        dateTo = now;
-      }
-      if (startDate) dateFrom = new Date(startDate);
-      if (endDate) dateTo = new Date(endDate);
-      if (startDate && endDate) {
-        // Calculate previous period for custom range
-        const diff =
-          new Date(endDate).getTime() - new Date(startDate).getTime();
-        prevDateTo = new Date(new Date(startDate).getTime());
-        prevDateFrom = new Date(new Date(startDate).getTime() - diff);
-      }
 
-      // Helper to build where clause
-      const buildWhere = (extra: any = {}, prev = false) => {
-        const where: any = { ...extra };
-        let from = prev ? prevDateFrom : dateFrom;
-        let to = prev ? prevDateTo : dateTo;
-        if (from || to) {
-          where.created_at = {};
-          if (from) where.created_at.gte = from;
-          if (to) where.created_at.lte = to;
-        }
+      const dateRanges = Helpers.getDateRanges({
+        timeline: timeline ? String(timeline) : 'all',
+        start_date: startDate,
+        end_date: endDate,
+      });
+      const now = new Date();
+
+      // Helper to add roleId filter if present
+      const addRoleFilter = (extra: any = {}) => {
         if (roleId) {
-          where.user_roles = {
-            some: {
-              role: { role_id: roleId },
-              is_active: true,
+          return {
+            ...extra,
+            user_roles: {
+              some: {
+                role: { role_id: roleId },
+                is_active: true,
+              },
             },
           };
         }
-        return where;
-      };
-
-      // Helper to compute trend
-      const computeTrend = (current: number, prev: number) => {
-        if (prev === 0 && current > 0)
-          return { percentage: 100, trend: 'neutral' };
-        if (prev === 0 && current === 0)
-          return { percentage: 0, trend: 'neutral' };
-        const diff = current - prev;
-        const pct = prev !== 0 ? (diff / prev) * 100 : 0;
-        let trend: 'increase' | 'decrease' | 'neutral' = 'neutral';
-        if (pct > 0) trend = 'increase';
-        else if (pct < 0) trend = 'decrease';
-        else if (pct === 0) trend = 'neutral';
-        return { percentage: Math.round(pct * 10) / 10, trend };
+        return extra;
       };
 
       // Total users
-      const totalUsers = await this.prisma.user.count({ where: buildWhere() });
-      const totalUsersPrev = await this.prisma.user.count({
-        where: buildWhere({}, true),
+      const totalUsers = await this.prisma.user.count({
+        where: Helpers.buildWhere(addRoleFilter(), {
+          ...dateRanges,
+          usePrev: false,
+        }),
       });
-      const totalUsersTrend = computeTrend(totalUsers, totalUsersPrev);
+      const totalUsersPrev = await this.prisma.user.count({
+        where: Helpers.buildWhere(addRoleFilter(), {
+          ...dateRanges,
+          usePrev: true,
+        }),
+      });
+      const totalUsersTrend = Helpers.computeTrend(totalUsers, totalUsersPrev);
 
       // Active users (last_login within the last month)
       const oneMonthAgo = new Date(
@@ -638,32 +579,47 @@ export class UserService {
       const activeUsers = 120;
       const activeUsersPrev = 810;
       // const activeUsers = await this.prisma.user.count({
-      //   where: buildWhere({ last_login: { gte: oneMonthAgo, not: null } }),
-      // });
-      // const activeUsersPrev = await this.prisma.user.count({
-      //   where: buildWhere(
-      //     { last_login: { gte: oneMonthAgo, not: null } },
-      //     true,
+      //   where: Helpers.buildWhere(
+      //     addRoleFilter({ last_login: { gte: oneMonthAgo, not: null } }),
+      //     { ...dateRanges, usePrev: false },
       //   ),
       // });
-      const activeUsersTrend = computeTrend(activeUsers, activeUsersPrev);
+      // const activeUsersPrev = await this.prisma.user.count({
+      //   where: Helpers.buildWhere(
+      //     addRoleFilter({ last_login: { gte: oneMonthAgo, not: null } }),
+      //     { ...dateRanges, usePrev: true },
+      //   ),
+      // });
+      const activeUsersTrend = Helpers.computeTrend(
+        activeUsers,
+        activeUsersPrev,
+      );
 
       // Business users
       const businessUsers = await this.prisma.user.count({
-        where: buildWhere({ business_users: { some: { is_active: true } } }),
-      });
-      const businessUsersPrev = await this.prisma.user.count({
-        where: buildWhere(
-          { business_users: { some: { is_active: true } } },
-          true,
+        where: Helpers.buildWhere(
+          addRoleFilter({ business_users: { some: { is_active: true } } }),
+          { ...dateRanges, usePrev: false },
         ),
       });
-      const businessUsersTrend = computeTrend(businessUsers, businessUsersPrev);
+      const businessUsersPrev = await this.prisma.user.count({
+        where: Helpers.buildWhere(
+          addRoleFilter({ business_users: { some: { is_active: true } } }),
+          { ...dateRanges, usePrev: true },
+        ),
+      });
+      const businessUsersTrend = Helpers.computeTrend(
+        businessUsers,
+        businessUsersPrev,
+      );
 
       // New users this month
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const newUsers = await this.prisma.user.count({
-        where: buildWhere({ created_at: { gte: monthStart, lte: now } }),
+        where: Helpers.buildWhere(
+          addRoleFilter({ created_at: { gte: monthStart, lte: now } }),
+          { ...dateRanges, usePrev: false },
+        ),
       });
       const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const prevMonthEnd = new Date(
@@ -676,32 +632,52 @@ export class UserService {
         999,
       );
       const newUsersPrev = await this.prisma.user.count({
-        where: buildWhere(
-          { created_at: { gte: prevMonthStart, lte: prevMonthEnd } },
-          true,
+        where: Helpers.buildWhere(
+          addRoleFilter({
+            created_at: { gte: prevMonthStart, lte: prevMonthEnd },
+          }),
+          { ...dateRanges, usePrev: true },
         ),
       });
-      const newUsersThisMonthTrend = computeTrend(newUsers, newUsersPrev);
+      const newUsersThisMonthTrend = Helpers.computeTrend(
+        newUsers,
+        newUsersPrev,
+      );
 
       // Pending approvals
       const pendingUsers = 7;
       const pendingUsersPrev = 5;
       // const pendingUsers = await this.prisma.user.count({
-      //   where: buildWhere({ last_login: null }),
+      //   where: Helpers.buildWhere(
+      //     addRoleFilter({ last_login: null }),
+      //     { ...dateRanges, usePrev: false },
+      //   ),
       // });
       // const pendingUsersPrev = await this.prisma.user.count({
-      //   where: buildWhere({ last_login: null }, true),
+      //   where: Helpers.buildWhere(
+      //     addRoleFilter({ last_login: null }),
+      //     { ...dateRanges, usePrev: true },
+      //   ),
       // });
-      const pendingUsersTrend = computeTrend(pendingUsers, pendingUsersPrev);
+      const pendingUsersTrend = Helpers.computeTrend(
+        pendingUsers,
+        pendingUsersPrev,
+      );
 
       // Deactivated users (no active user_roles)
       const deactivatedUsers = await this.prisma.user.count({
-        where: buildWhere({ deleted_at: null }),
+        where: Helpers.buildWhere(addRoleFilter({ deleted_at: null }), {
+          ...dateRanges,
+          usePrev: false,
+        }),
       });
       const deactivatedUsersPrev = await this.prisma.user.count({
-        where: buildWhere({ deleted_at: null }, true),
+        where: Helpers.buildWhere(addRoleFilter({ deleted_at: null }), {
+          ...dateRanges,
+          usePrev: true,
+        }),
       });
-      const deactivatedUsersTrend = computeTrend(
+      const deactivatedUsersTrend = Helpers.computeTrend(
         deactivatedUsers,
         deactivatedUsersPrev,
       );
@@ -710,7 +686,7 @@ export class UserService {
       // TODO: Fetch high-value users from transactions microservice (users with 100+ transactions)
       const highValueUsers = 42; // MOCK VALUE
       const highValueUsersPrev = 35; // MOCK VALUE
-      const highValueUsersTrend = computeTrend(
+      const highValueUsersTrend = Helpers.computeTrend(
         highValueUsers,
         highValueUsersPrev,
       );
@@ -721,15 +697,21 @@ export class UserService {
       const atRiskUsers = 4;
       const atRiskUsersPrev = 1;
       // const atRiskUsers = await this.prisma.user.count({
-      //   where: buildWhere({ last_login: { lt: thirtyDaysAgo, not: null } }),
-      // });
-      // const atRiskUsersPrev = await this.prisma.user.count({
-      //   where: buildWhere(
-      //     { last_login: { lt: thirtyDaysAgo, not: null } },
-      //     true,
+      //   where: Helpers.buildWhere(
+      //     addRoleFilter({ last_login: { lt: thirtyDaysAgo, not: null } }),
+      //     { ...dateRanges, usePrev: false },
       //   ),
       // });
-      const atRiskUsersTrend = computeTrend(atRiskUsers, atRiskUsersPrev);
+      // const atRiskUsersPrev = await this.prisma.user.count({
+      //   where: Helpers.buildWhere(
+      //     addRoleFilter({ last_login: { lt: thirtyDaysAgo, not: null } }),
+      //     { ...dateRanges, usePrev: true },
+      //   ),
+      // });
+      const atRiskUsersTrend = Helpers.computeTrend(
+        atRiskUsers,
+        atRiskUsersPrev,
+      );
 
       return {
         total_users: { value: totalUsers, ...totalUsersTrend },

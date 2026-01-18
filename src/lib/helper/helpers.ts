@@ -69,4 +69,24 @@ export class Helpers {
 
     return `${letters}-${digits}-${datestamp}`;
   }
+
+  static computeTrend(
+    current: number,
+    previous: number,
+  ): {
+    percentage: number;
+    trend: 'increase' | 'decrease' | 'neutral';
+  } {
+    if (previous === 0 && current > 0)
+      return { percentage: 100, trend: 'neutral' };
+    if (previous === 0 && current === 0)
+      return { percentage: 0, trend: 'neutral' };
+    const diff = current - previous;
+    const pct = previous !== 0 ? (diff / previous) * 100 : 0;
+    let trend: 'increase' | 'decrease' | 'neutral' = 'neutral';
+    if (pct > 0) trend = 'increase';
+    else if (pct < 0) trend = 'decrease';
+    else if (pct === 0) trend = 'neutral';
+    return { percentage: Math.round(pct * 10) / 10, trend };
+  }
 }

@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { RolesModule } from './roles/roles.module';
 import { QueueModule } from './queues/queue.module';
 import { StaffModule } from './staff/staff.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { StaffModule } from './staff/staff.module';
     RolesModule,
     QueueModule,
     StaffModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -30,8 +30,10 @@ service OperationService {
 
     // Business Types Management
   rpc GetAdminBusinessTypes(EmptyRequest) returns (GetBusinessTypesResponse);
+  rpc GetBusinessType(BusinessTypeIdRequest) returns (GetBusinessTypeResponse);
   rpc GetBusinessTypes(EmptyRequest) returns (GetBusinessTypesResponse);
   rpc CreateBusinessType(CreateBusinessTypeRequest) returns (CreateBusinessTypeResponse);
+  rpc UpdateAdminBusinessType(UpdateBusinessTypeRequest) returns (UtilitiesResponse);
   rpc UpdateBusinessTypeActiveStatus(UpdateBusinessTypeActiveStatusRequest) returns (UpdateBusinessTypeActiveStatusResponse);
 
 
@@ -85,6 +87,9 @@ message HealthCheckResponse {
   string status = 1;
 }
 
+message BusinessTypeIdRequest{
+   string business_type_id = 1;
+}
 
 
 // --- Company Services Creation ---
@@ -305,6 +310,12 @@ message CreateBusinessTypeResponse {
   optional BusinessTypeData data = 3;
 }
 
+message UpdateBusinessTypeRequest {
+  int32 business_type_id = 1;
+   string name = 2;
+  string description = 3;
+  bool is_active = 4;
+}
 message UpdateBusinessTypeActiveStatusRequest {
   int32 business_type_id = 1;
 }
@@ -319,6 +330,11 @@ message GetBusinessTypesResponse {
   bool success = 1;
   optional string error = 2;
   repeated BusinessTypeData business_types = 3;
+}
+message GetBusinessTypeResponse {
+  bool success = 1;
+  optional string error = 2;
+  BusinessTypeData business_type = 3;
 }
 
 message BusinessTypeData {

@@ -19,7 +19,8 @@ service AdminService {
 
   rpc GetUser(GetUserRequest) returns (UserResponse);
 
- 
+  // Analytics
+  rpc OverviewAnalytics(EmptyRequest) returns (OverviewAnalyticsResponse);
 }
 
 message FetchAllAdminResponse {
@@ -241,4 +242,90 @@ enum SendOtpType {
   ADMIN_REGISTRATION = 2;
   ADMIN_SIGNIN = 3;
   FORGOT_PASSWORD = 4;
+}
+
+// Analytics Messages
+message TotalOrganizationsData {
+  int32 count = 1;
+  repeated TrendData trend_data = 2;
+}
+
+message OrganizationWithCounts {
+  string organization_id = 1;
+  string name = 2;
+  string phone_number = 3;
+  string email = 4;
+  string registration_number = 5;
+  string registration_date = 6;
+  bool is_active = 7;
+  bool is_multi_company = 8;
+  string creator_id = 9;
+  string created_at = 10;
+  string updated_at = 11;
+  optional string deleted_at = 12;
+  int32 staff_count = 13;
+  int32 business_user_count = 14;
+  int32 access_control_count = 15;
+  int32 companies_count = 16;
+}
+
+message TopPerformingOrganizationsData {
+  repeated OrganizationWithCounts top_organizations = 1;
+}
+
+message YAxis {
+  int32 max = 1;
+  repeated int32 sections = 2;
+  string label = 3;
+}
+
+message XAxis {
+  repeated string sections = 1;
+  string label = 2;
+}
+
+message DailyActiveUsersData {
+  string day = 1;
+  string date = 2;
+  int32 active_users = 3;
+  bool is_today = 4;
+}
+
+message PeakDay {
+  string day = 1;
+  string date = 2;
+  int32 active_users = 3;
+  bool is_today = 4;
+}
+
+message DailyActiveUsersSummary {
+  int32 total_users = 1;
+  double avg_daily_active = 2;
+  PeakDay peak_day = 3;
+}
+
+message DailyActiveUsersAnalytics {
+  YAxis y_axis = 1;
+  XAxis x_axis = 2;
+  repeated DailyActiveUsersData data = 3;
+  DailyActiveUsersSummary summary = 4;
+}
+
+message TrendData {
+  string name = 1;
+  int32 value = 2;
+}
+
+message ActiveUsersCountData {
+  int32 count = 1;
+  double percentage = 2;
+  string trend = 3;
+  repeated TrendData trend_data = 4;
+}
+
+message OverviewAnalyticsResponse {
+  TotalOrganizationsData total_organizations = 1;
+  TopPerformingOrganizationsData top_performing_organizations = 2;
+  DailyActiveUsersAnalytics daily_active_users = 3;
+  ActiveUsersCountData active_users_count = 4;
 }

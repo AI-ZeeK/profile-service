@@ -12,6 +12,7 @@ import {
   UpdateUserStatusRequest,
   GetUsersRequest,
   AdminUsersAnalyticsRequest,
+  GetUserCountForOrganizationRequest,
 } from './shared/dependencies/profile.pb';
 import { BusinessUserService } from './user/business-user.service';
 
@@ -27,6 +28,11 @@ export class AppController {
   @GrpcMethod(PROFILE_SERVICE_NAME, 'AdminUsersAnalytics')
   async AdminUsersAnalytics(data: AdminUsersAnalyticsRequest) {
     return await this.userService.AdminGetUserAnalytics(data);
+  }
+
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'GetUserCountForOrganization')
+  async GetUserCountForOrganization(data: GetUserCountForOrganizationRequest) {
+    return await this.userService.getUserCountForOrganization(data);
   }
 
   // 👤 User Management
