@@ -31,6 +31,7 @@ service CommunicationService {
   
   // Mail Management
   rpc SendOtpMail(SendOtpMailRequest) returns (SendOtpMailResponse);
+  rpc SendStaffInvitationMail(SendStaffInvitationMailRequest) returns (SendStaffInvitationMailResponse);
 
   // Push Notifications
   rpc ClearUserPushSubscriptions(ClearUserPushSubscriptionsRequest) returns (ClearUserPushSubscriptionsResponse);
@@ -52,6 +53,18 @@ enum SendOtpType {
   ADMIN_REGISTRATION = 2;
   ADMIN_SIGNIN = 3;
   FORGOT_PASSWORD = 4;
+  STAFF_INVITATION = 5;
+}
+
+message SendStaffInvitationMailRequest {
+  string email = 1;
+  string invitation_url = 2;
+  string company_name = 3;
+}
+
+message SendStaffInvitationMailResponse {
+  bool success = 1;
+  optional string error = 2;
 }
 
 message ClearUserPushSubscriptionsRequest {

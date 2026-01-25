@@ -24,7 +24,7 @@ import {
 } from 'src/shared/dependencies/profile.pb';
 import { RpcException } from '@nestjs/microservices';
 import { Helpers, LoginRequest } from '@djengo/proto-contracts';
-import { Queue } from 'bullmq';
+import { Queue, tryCatch } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Env } from 'src/config/configuration';
 
@@ -348,13 +348,16 @@ export class AuthService {
     });
 
     this.logger.log('OTP SENT', otp);
-
-    // await this.communicationService.sendOtp({
-    //   email: email,
-    //   name: name,
-    //   otp,
-    //   type: type,
-    // });
+    try {
+      await this.communicationService.sendOtp({
+        email: email,
+        name: name,
+        otp,
+        type: type,
+      });
+    } catch (error) {
+      this.logger.error('Error sending OTP email', error);
+    }
 
     const { auth_token } = await this.generateAuthToken({
       user_id: user_id,

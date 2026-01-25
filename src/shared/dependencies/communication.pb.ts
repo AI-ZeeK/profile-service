@@ -16,6 +16,7 @@ export enum SendOtpType {
   ADMIN_REGISTRATION = 2,
   ADMIN_SIGNIN = 3,
   FORGOT_PASSWORD = 4,
+  STAFF_INVITATION = 5,
   UNRECOGNIZED = -1,
 }
 
@@ -59,6 +60,17 @@ export interface SendOtpMailRequest {
   name: string;
   otp: string;
   type: SendOtpType;
+}
+
+export interface SendStaffInvitationMailRequest {
+  email: string;
+  invitationUrl: string;
+  companyName: string;
+}
+
+export interface SendStaffInvitationMailResponse {
+  success: boolean;
+  error?: string | undefined;
 }
 
 export interface ClearUserPushSubscriptionsRequest {
@@ -352,6 +364,8 @@ export interface CommunicationServiceClient {
 
   sendOtpMail(request: SendOtpMailRequest): Observable<SendOtpMailResponse>;
 
+  sendStaffInvitationMail(request: SendStaffInvitationMailRequest): Observable<SendStaffInvitationMailResponse>;
+
   /** Push Notifications */
 
   clearUserPushSubscriptions(
@@ -428,6 +442,13 @@ export interface CommunicationServiceController {
     request: SendOtpMailRequest,
   ): Promise<SendOtpMailResponse> | Observable<SendOtpMailResponse> | SendOtpMailResponse;
 
+  sendStaffInvitationMail(
+    request: SendStaffInvitationMailRequest,
+  ):
+    | Promise<SendStaffInvitationMailResponse>
+    | Observable<SendStaffInvitationMailResponse>
+    | SendStaffInvitationMailResponse;
+
   /** Push Notifications */
 
   clearUserPushSubscriptions(
@@ -457,6 +478,7 @@ export function CommunicationServiceControllerMethods() {
       "getUnreadCounts",
       "getChatEvents",
       "sendOtpMail",
+      "sendStaffInvitationMail",
       "clearUserPushSubscriptions",
     ];
     for (const method of grpcMethods) {

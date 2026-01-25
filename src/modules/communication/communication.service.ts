@@ -7,6 +7,7 @@ import {
   CommunicationServiceClient,
   protobufPackage,
   SendOtpMailRequest,
+  SendStaffInvitationMailRequest,
 } from 'src/shared/dependencies/communication.pb';
 
 @Injectable()
@@ -24,6 +25,12 @@ export class CommunicationService {
 
   async sendOtp(payload: SendOtpMailRequest) {
     return await firstValueFrom(this.communicationService.sendOtpMail(payload));
+  }
+
+  async sendStaffInvitationMail(payload: SendStaffInvitationMailRequest) {
+    return await firstValueFrom(
+      this.communicationService.sendStaffInvitationMail(payload),
+    );
   }
 
   async clearUserPushSubscriptions({

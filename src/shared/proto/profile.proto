@@ -27,6 +27,8 @@ service ProfileService {
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
   rpc GetUserCountForOrganization(GetUserCountForOrganizationRequest) returns (GetUserCountForOrganizationResponse);
 
+  rpc GetLoginHistory(GetLoginHistoryRequest) returns (LoginHistoryResponse);
+
   // BUSINESS ROLES
   rpc CreateOrUpdateBusinessUserRole(CreateOrUpdateBusinessUserRoleRequest) returns (CreateOrUpdateBusinessUserRoleResponse);
 
@@ -35,13 +37,76 @@ service ProfileService {
 
   rpc getStaffDetails(StaffDetailsRequest) returns (StaffDetailsResponse);
   rpc getManyStaffDetails(ManyStaffDetailsRequest) returns (ManyStaffDetailsResponse);
+  rpc getCompanyStaffs(PaginatedCompanyRequest) returns (ManyStaffDetailsResponse);
+
+  // Staff Invitations
+  rpc SendStaffInvitations(SendStaffInvitationsRequest) returns (SendStaffInvitationsResponse);
+  rpc GetInvitationByCode(GetInvitationByCodeRequest) returns (GetInvitationByCodeResponse);
+  rpc MarkInvitationViewed(MarkInvitationViewedRequest) returns (InvitationStatusResponse);
+  rpc AcceptInvitation(AcceptInvitationRequest) returns (AcceptInvitationResponse);
+  rpc DeclineInvitation(DeclineInvitationRequest) returns (InvitationStatusResponse);
+  rpc GetInvitationsByCompany(PaginatedCompanyRequest) returns (GetInvitationsByCompanyResponse);
   
   
   rpc AdminGetUsers(GetUsersRequest) returns (GetUsersResponse); 
   rpc AdminUsersAnalytics(AdminUsersAnalyticsRequest) returns (AdminUsersAnalyticsResponse);
-
+// ANALYTICS
   rpc ActiveUsersCount(EmptyRequest) returns (ActiveUsersCountResponse);
   rpc DailyActiveUsersAnalytics(EmptyRequest) returns (DailyActiveUsersAnalyticsResponse);
+}
+
+message LoginHistoryResponse {
+  repeated LoginHistory login_history = 1;
+}
+
+message LoginHistory {
+  string session_id = 1;
+  string user_id = 2;
+  string device_info = 3;
+  bool is_active = 4;
+  string login_at = 5;
+  SessionSource source = 9;
+}
+
+enum RequestFilter {
+  ALL = 0;
+  ACTIVE = 1;
+  INACTIVE = 2; 
+}
+
+message PaginatedCompanyRequest {
+  // Company identification
+  string company_id = 1;
+  string organization_id = 2;
+  
+  // Pagination and sorting
+  optional string search = 3;
+  optional int32 page = 4;
+  optional int32 page_size = 5;
+  optional string sort_by = 6;
+  optional string sort_order = 7;
+  optional RequestFilter filter = 8;
+
+
+}
+
+message GetInvitationsByCompanyResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated StaffInvitation invitations = 3;
+  TableMeta meta = 4;
+}
+
+message CompanyIdRequest {
+  string company_id = 1;
+  string organization_id = 2;
+}
+
+
+message GetLoginHistoryRequest {
+  string user_id = 1;
+  optional int32 page = 2;
+  optional int32 page_size = 3;
 }
 
 enum Timeline {
@@ -182,6 +247,9 @@ message Staff {
   bool is_active = 7;
   string created_at = 10;
   string updated_at = 11;
+  optional User user = 12;
+  string role_id = 13;
+  optional OrganizationRole role = 14;
 }
 
 message StaffDetailsResponse {
@@ -193,6 +261,113 @@ message ManyStaffDetailsResponse {
   bool success = 1;
   optional string error = 2;
   repeated Staff staffs = 3;
+  optional  TableMeta meta = 4;
+
+}
+
+// Staff Invitation Messages
+
+message StaffInvitationItem {
+  string email = 1;
+  string role_id = 2;
+  optional string branch_id = 4;
+  optional string department_id = 6;
+}
+
+message SendStaffInvitationsRequest {
+  string organization_id = 1;
+  string company_id = 2;
+  string invited_by = 3;
+  repeated StaffInvitationItem invitations = 5;
+}
+
+message InvitationResult {
+  bool success = 2;
+  string message = 3;
+}
+
+message SendStaffInvitationsResponse {
+  bool success = 1;
+  optional string error = 2;
+  string message = 3;
+  repeated InvitationResult results = 4;
+}
+
+message GetInvitationByCodeRequest {
+  string invitation_code = 1;
+}
+
+enum InvitationStatus {
+  PENDING = 0;
+  VIEWED = 1;
+  ACCEPTED = 2;
+  DECLINED = 3;
+  EXPIRED = 4;
+}
+
+message OrganizationRole {
+  string role_id = 1;
+  string organization_id = 2;
+  string company_id = 3;
+  string branch_id = 4;
+  string name = 5;
+  string slug = 6;
+  string description = 7;
+  bool is_active = 8;
+  bool is_org_level = 10;
+  string created_at = 11;
+  string updated_at = 12;
+  string deleted_at = 13;
+}
+
+
+message StaffInvitation {
+  string invitation_id = 1;
+  string company_id = 2;
+  optional string branch_id = 3;
+  optional string department_id = 4;
+  optional string role_id = 5;
+  optional OrganizationRole role = 6;
+  string email = 7;
+  string invitation_code = 8;
+  // InvitationStatus status = 9;
+  string invited_by =10;
+  string expires_at = 11;
+  optional string responsed_at = 12;
+  string created_at = 15;
+  string status = 16;
+}
+
+message GetInvitationByCodeResponse {
+  bool success = 1;
+  optional string error = 2;
+  optional StaffInvitation invitation = 3;
+}
+
+message MarkInvitationViewedRequest {
+  string invitation_code = 1;
+}
+
+message AcceptInvitationRequest {
+  string invitation_code = 1;
+  string user_id = 2;
+}
+
+message AcceptInvitationResponse {
+  bool success = 1;
+  optional string error = 2;
+  string message = 3;
+  optional Staff staff = 4;
+}
+
+message DeclineInvitationRequest {
+  string invitation_code = 1;
+}
+
+message InvitationStatusResponse {
+  bool success = 1;
+  optional string error = 2;
+  string message = 3;
 }
 
 message ValidateAccountRequest {

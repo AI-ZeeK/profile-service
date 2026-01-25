@@ -222,6 +222,56 @@ export interface ValidateCompanyReferenceResponse {
   companyId: string;
 }
 
+export interface VerifyCompanyIdRequest {
+  companyId: string;
+  organizationId: string;
+}
+
+export interface VerifyCompanyIdResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+  company?: Company | undefined;
+}
+
+export interface VerifyBranchIdRequest {
+  branchId: string;
+  companyId: string;
+  organizationId: string;
+}
+
+export interface VerifyBranchIdResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+  branch?: Branch | undefined;
+}
+
+export interface VerifyDepartmentIdRequest {
+  companyId: string;
+  organizationId: string;
+  departmentId: string;
+}
+
+export interface VerifyDepartmentIdResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+  department?: Department | undefined;
+}
+
+export interface VerifyRoleIdRequest {
+  companyId: string;
+  roleId: string;
+}
+
+export interface VerifyRoleIdResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+  role?: OrganizationRole | undefined;
+}
+
 export interface CreateCompanyRequest {
   name: string;
   organizationId: string;
@@ -341,6 +391,18 @@ export interface Branch {
   creatorId?: string | undefined;
 }
 
+export interface Department {
+  departmentId: string;
+  companyId: string;
+  branchId?: string | undefined;
+  name: string;
+  description?: string | undefined;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | undefined;
+}
+
 /** Analytics Messages */
 export interface TrendData {
   name: string;
@@ -416,6 +478,66 @@ export interface TopPerformingOrganizationsResponse {
   topOrganizations: OrganizationWithCounts[];
 }
 
+/** Tables Messages */
+export interface GetOrganizationsRequest {
+  search?: string | undefined;
+  page?: number | undefined;
+  pageSize?: number | undefined;
+  sortBy?: string | undefined;
+  sortOrder?: string | undefined;
+}
+
+export interface OrganizationAddress {
+  street?: string | undefined;
+  building?: string | undefined;
+  apartment?: string | undefined;
+  city?: string | undefined;
+  state?: string | undefined;
+  country?: string | undefined;
+  postalCode?: string | undefined;
+}
+
+export interface OrganizationMeta {
+  organizationRoles: number;
+  isMultiCompany: boolean;
+  companiesCount: number;
+  totalBusinessUsers: number;
+  activeBusinessUsers: number;
+  inactiveBusinessUsers: number;
+}
+
+export interface OrganizationDetail {
+  organizationId: string;
+  name: string;
+  email: string;
+  phoneNumber?: string | undefined;
+  status: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  registrationDate?: string | undefined;
+  createdAt: string;
+  updatedAt: string;
+  address?: OrganizationAddress | undefined;
+  meta: OrganizationMeta | undefined;
+  revenue: number;
+  transactions: number;
+}
+
+export interface PaginationMeta {
+  total: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+  nextPage?: number | undefined;
+  prevPage?: number | undefined;
+}
+
+export interface GetOrganizationsResponse {
+  organizations: OrganizationDetail[];
+  meta: PaginationMeta | undefined;
+}
+
 export const ORGANIZATION_PACKAGE_NAME = "organization";
 
 /** 🏢 Organization Service - handles organization and branch management */
@@ -430,6 +552,16 @@ export interface OrganizationServiceClient {
   /** Validate Company Reference */
 
   validateCompanyReference(request: ValidateCompanyReferenceRequest): Observable<ValidateCompanyReferenceResponse>;
+
+  /** Verify IDs */
+
+  verifyCompanyId(request: VerifyCompanyIdRequest): Observable<VerifyCompanyIdResponse>;
+
+  verifyBranchId(request: VerifyBranchIdRequest): Observable<VerifyBranchIdResponse>;
+
+  verifyDepartmentId(request: VerifyDepartmentIdRequest): Observable<VerifyDepartmentIdResponse>;
+
+  verifyRoleId(request: VerifyRoleIdRequest): Observable<VerifyRoleIdResponse>;
 
   /** Create Company */
 
@@ -482,6 +614,10 @@ export interface OrganizationServiceClient {
   topPerformingOrganizations(
     request: TopPerformingOrganizationsRequest,
   ): Observable<TopPerformingOrganizationsResponse>;
+
+  /** Tables */
+
+  getOrganizations(request: GetOrganizationsRequest): Observable<GetOrganizationsResponse>;
 }
 
 /** 🏢 Organization Service - handles organization and branch management */
@@ -505,6 +641,24 @@ export interface OrganizationServiceController {
     | Promise<ValidateCompanyReferenceResponse>
     | Observable<ValidateCompanyReferenceResponse>
     | ValidateCompanyReferenceResponse;
+
+  /** Verify IDs */
+
+  verifyCompanyId(
+    request: VerifyCompanyIdRequest,
+  ): Promise<VerifyCompanyIdResponse> | Observable<VerifyCompanyIdResponse> | VerifyCompanyIdResponse;
+
+  verifyBranchId(
+    request: VerifyBranchIdRequest,
+  ): Promise<VerifyBranchIdResponse> | Observable<VerifyBranchIdResponse> | VerifyBranchIdResponse;
+
+  verifyDepartmentId(
+    request: VerifyDepartmentIdRequest,
+  ): Promise<VerifyDepartmentIdResponse> | Observable<VerifyDepartmentIdResponse> | VerifyDepartmentIdResponse;
+
+  verifyRoleId(
+    request: VerifyRoleIdRequest,
+  ): Promise<VerifyRoleIdResponse> | Observable<VerifyRoleIdResponse> | VerifyRoleIdResponse;
 
   /** Create Company */
 
@@ -594,6 +748,12 @@ export interface OrganizationServiceController {
     | Promise<TopPerformingOrganizationsResponse>
     | Observable<TopPerformingOrganizationsResponse>
     | TopPerformingOrganizationsResponse;
+
+  /** Tables */
+
+  getOrganizations(
+    request: GetOrganizationsRequest,
+  ): Promise<GetOrganizationsResponse> | Observable<GetOrganizationsResponse> | GetOrganizationsResponse;
 }
 
 export function OrganizationServiceControllerMethods() {
@@ -602,6 +762,10 @@ export function OrganizationServiceControllerMethods() {
       "createOrganization",
       "getOrganization",
       "validateCompanyReference",
+      "verifyCompanyId",
+      "verifyBranchId",
+      "verifyDepartmentId",
+      "verifyRoleId",
       "createCompany",
       "fetchOrganizationCompanies",
       "fetchCompany",
@@ -620,6 +784,7 @@ export function OrganizationServiceControllerMethods() {
       "getOrganizationAnalytics",
       "totalOrganizations",
       "topPerformingOrganizations",
+      "getOrganizations",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

@@ -12,12 +12,28 @@ import { Struct } from "./google/protobuf/struct.pb";
 
 export const protobufPackage = "profile";
 
+export enum RequestFilter {
+  ALL = 0,
+  ACTIVE = 1,
+  INACTIVE = 2,
+  UNRECOGNIZED = -1,
+}
+
 export enum Timeline {
   _1m = 0,
   _3m = 1,
   _6m = 2,
   _1y = 3,
   all = 4,
+  UNRECOGNIZED = -1,
+}
+
+export enum InvitationStatus {
+  PENDING = 0,
+  VIEWED = 1,
+  ACCEPTED = 2,
+  DECLINED = 3,
+  EXPIRED = 4,
   UNRECOGNIZED = -1,
 }
 
@@ -43,6 +59,50 @@ export enum SendOtpType {
   ADMIN_SIGNIN = 3,
   FORGOT_PASSWORD = 4,
   UNRECOGNIZED = -1,
+}
+
+export interface LoginHistoryResponse {
+  loginHistory: LoginHistory[];
+}
+
+export interface LoginHistory {
+  sessionId: string;
+  userId: string;
+  deviceInfo: string;
+  isActive: boolean;
+  loginAt: string;
+  source: SessionSource;
+}
+
+export interface PaginatedCompanyRequest {
+  /** Company identification */
+  companyId: string;
+  organizationId: string;
+  /** Pagination and sorting */
+  search?: string | undefined;
+  page?: number | undefined;
+  pageSize?: number | undefined;
+  sortBy?: string | undefined;
+  sortOrder?: string | undefined;
+  filter?: RequestFilter | undefined;
+}
+
+export interface GetInvitationsByCompanyResponse {
+  success: boolean;
+  error?: string | undefined;
+  invitations: StaffInvitation[];
+  meta: TableMeta | undefined;
+}
+
+export interface CompanyIdRequest {
+  companyId: string;
+  organizationId: string;
+}
+
+export interface GetLoginHistoryRequest {
+  userId: string;
+  page?: number | undefined;
+  pageSize?: number | undefined;
 }
 
 export interface GetUserCountForOrganizationRequest {
@@ -172,6 +232,9 @@ export interface Staff {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  user?: User | undefined;
+  roleId: string;
+  role?: OrganizationRole | undefined;
 }
 
 export interface StaffDetailsResponse {
@@ -184,6 +247,101 @@ export interface ManyStaffDetailsResponse {
   success: boolean;
   error?: string | undefined;
   staffs: Staff[];
+  meta?: TableMeta | undefined;
+}
+
+export interface StaffInvitationItem {
+  email: string;
+  roleId: string;
+  branchId?: string | undefined;
+  departmentId?: string | undefined;
+}
+
+export interface SendStaffInvitationsRequest {
+  organizationId: string;
+  companyId: string;
+  invitedBy: string;
+  invitations: StaffInvitationItem[];
+}
+
+export interface InvitationResult {
+  success: boolean;
+  message: string;
+}
+
+export interface SendStaffInvitationsResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+  results: InvitationResult[];
+}
+
+export interface GetInvitationByCodeRequest {
+  invitationCode: string;
+}
+
+export interface OrganizationRole {
+  roleId: string;
+  organizationId: string;
+  companyId: string;
+  branchId: string;
+  name: string;
+  slug: string;
+  description: string;
+  isActive: boolean;
+  isOrgLevel: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string;
+}
+
+export interface StaffInvitation {
+  invitationId: string;
+  companyId: string;
+  branchId?: string | undefined;
+  departmentId?: string | undefined;
+  roleId?: string | undefined;
+  role?: OrganizationRole | undefined;
+  email: string;
+  invitationCode: string;
+  /** InvitationStatus status = 9; */
+  invitedBy: string;
+  expiresAt: string;
+  responsedAt?: string | undefined;
+  createdAt: string;
+  status: string;
+}
+
+export interface GetInvitationByCodeResponse {
+  success: boolean;
+  error?: string | undefined;
+  invitation?: StaffInvitation | undefined;
+}
+
+export interface MarkInvitationViewedRequest {
+  invitationCode: string;
+}
+
+export interface AcceptInvitationRequest {
+  invitationCode: string;
+  userId: string;
+}
+
+export interface AcceptInvitationResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+  staff?: Staff | undefined;
+}
+
+export interface DeclineInvitationRequest {
+  invitationCode: string;
+}
+
+export interface InvitationStatusResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
 }
 
 export interface ValidateAccountRequest {
@@ -562,6 +720,8 @@ export interface ProfileServiceClient {
     request: GetUserCountForOrganizationRequest,
   ): Observable<GetUserCountForOrganizationResponse>;
 
+  getLoginHistory(request: GetLoginHistoryRequest): Observable<LoginHistoryResponse>;
+
   /** BUSINESS ROLES */
 
   createOrUpdateBusinessUserRole(
@@ -576,9 +736,27 @@ export interface ProfileServiceClient {
 
   getManyStaffDetails(request: ManyStaffDetailsRequest): Observable<ManyStaffDetailsResponse>;
 
+  getCompanyStaffs(request: PaginatedCompanyRequest): Observable<ManyStaffDetailsResponse>;
+
+  /** Staff Invitations */
+
+  sendStaffInvitations(request: SendStaffInvitationsRequest): Observable<SendStaffInvitationsResponse>;
+
+  getInvitationByCode(request: GetInvitationByCodeRequest): Observable<GetInvitationByCodeResponse>;
+
+  markInvitationViewed(request: MarkInvitationViewedRequest): Observable<InvitationStatusResponse>;
+
+  acceptInvitation(request: AcceptInvitationRequest): Observable<AcceptInvitationResponse>;
+
+  declineInvitation(request: DeclineInvitationRequest): Observable<InvitationStatusResponse>;
+
+  getInvitationsByCompany(request: PaginatedCompanyRequest): Observable<GetInvitationsByCompanyResponse>;
+
   adminGetUsers(request: GetUsersRequest): Observable<GetUsersResponse>;
 
   adminUsersAnalytics(request: AdminUsersAnalyticsRequest): Observable<AdminUsersAnalyticsResponse>;
+
+  /** ANALYTICS */
 
   activeUsersCount(request: EmptyRequest): Observable<ActiveUsersCountResponse>;
 
@@ -643,6 +821,10 @@ export interface ProfileServiceController {
     | Observable<GetUserCountForOrganizationResponse>
     | GetUserCountForOrganizationResponse;
 
+  getLoginHistory(
+    request: GetLoginHistoryRequest,
+  ): Promise<LoginHistoryResponse> | Observable<LoginHistoryResponse> | LoginHistoryResponse;
+
   /** BUSINESS ROLES */
 
   createOrUpdateBusinessUserRole(
@@ -674,11 +856,46 @@ export interface ProfileServiceController {
     request: ManyStaffDetailsRequest,
   ): Promise<ManyStaffDetailsResponse> | Observable<ManyStaffDetailsResponse> | ManyStaffDetailsResponse;
 
+  getCompanyStaffs(
+    request: PaginatedCompanyRequest,
+  ): Promise<ManyStaffDetailsResponse> | Observable<ManyStaffDetailsResponse> | ManyStaffDetailsResponse;
+
+  /** Staff Invitations */
+
+  sendStaffInvitations(
+    request: SendStaffInvitationsRequest,
+  ): Promise<SendStaffInvitationsResponse> | Observable<SendStaffInvitationsResponse> | SendStaffInvitationsResponse;
+
+  getInvitationByCode(
+    request: GetInvitationByCodeRequest,
+  ): Promise<GetInvitationByCodeResponse> | Observable<GetInvitationByCodeResponse> | GetInvitationByCodeResponse;
+
+  markInvitationViewed(
+    request: MarkInvitationViewedRequest,
+  ): Promise<InvitationStatusResponse> | Observable<InvitationStatusResponse> | InvitationStatusResponse;
+
+  acceptInvitation(
+    request: AcceptInvitationRequest,
+  ): Promise<AcceptInvitationResponse> | Observable<AcceptInvitationResponse> | AcceptInvitationResponse;
+
+  declineInvitation(
+    request: DeclineInvitationRequest,
+  ): Promise<InvitationStatusResponse> | Observable<InvitationStatusResponse> | InvitationStatusResponse;
+
+  getInvitationsByCompany(
+    request: PaginatedCompanyRequest,
+  ):
+    | Promise<GetInvitationsByCompanyResponse>
+    | Observable<GetInvitationsByCompanyResponse>
+    | GetInvitationsByCompanyResponse;
+
   adminGetUsers(request: GetUsersRequest): Promise<GetUsersResponse> | Observable<GetUsersResponse> | GetUsersResponse;
 
   adminUsersAnalytics(
     request: AdminUsersAnalyticsRequest,
   ): Promise<AdminUsersAnalyticsResponse> | Observable<AdminUsersAnalyticsResponse> | AdminUsersAnalyticsResponse;
+
+  /** ANALYTICS */
 
   activeUsersCount(
     request: EmptyRequest,
@@ -710,11 +927,19 @@ export function ProfileServiceControllerMethods() {
       "getUserContacts",
       "updateUser",
       "getUserCountForOrganization",
+      "getLoginHistory",
       "createOrUpdateBusinessUserRole",
       "fetchOrganizationRoles",
       "fetchOrganizationRolesCount",
       "getStaffDetails",
       "getManyStaffDetails",
+      "getCompanyStaffs",
+      "sendStaffInvitations",
+      "getInvitationByCode",
+      "markInvitationViewed",
+      "acceptInvitation",
+      "declineInvitation",
+      "getInvitationsByCompany",
       "adminGetUsers",
       "adminUsersAnalytics",
       "activeUsersCount",

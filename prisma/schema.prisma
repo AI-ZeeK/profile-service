@@ -55,6 +55,7 @@ model User {
   verifications           Verification[]
   staff                   Staff[]
   sessions                UserSession[]
+  staff_invitations       StaffInvitation[]
 
   @@index([user_id], map: "idx_users_user_id")
   @@index([email], map: "idx_users_email")
@@ -176,6 +177,32 @@ model StaffDepartment {
   @@schema("profiles")
 }
 
+
+model StaffInvitation {
+  invitation_id      String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  company_id         String           @db.Uuid // Reference to Organization Service
+  branch_id          String?          @db.Uuid // Optional - for branch-specific staff
+  department_id      String?          @db.Uuid // Optional - department assignment
+  role_id            String?          @db.Uuid // Reference to Organization Service role
+  email              String           @db.VarChar(255)
+  invitation_code    String           @unique @db.VarChar(100) // Unique token
+  status             InvitationStatus @default(PENDING)
+  invited_by_user_id String?          @db.Uuid // staff_id of person who sent invite
+  invited_by_user    User?            @relation(fields: [invited_by_user_id], references: [user_id], onDelete: Cascade)
+  expires_at         DateTime // 4 hours from creation
+  responsed_at       DateTime? // When status changed from PENDING
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @updatedAt
+
+  @@index([invitation_code])
+  @@index([email])
+  @@index([company_id])
+  @@index([status])
+  @@index([expires_at])
+  @@map("staff_invitations")
+  @@schema("profiles")
+}
+
 model Verification {
   verification_id String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id         String?             @db.Uuid
@@ -270,6 +297,16 @@ enum VerificationPurpose {
   PHONE_VERIFICATION
   PASSWORD_RESET
   TWO_FACTOR_AUTH
+
+  @@schema("profiles")
+}
+
+enum InvitationStatus {
+  PENDING
+  VIEWED
+  ACCEPTED
+  DECLINED
+  EXPIRED
 
   @@schema("profiles")
 }
