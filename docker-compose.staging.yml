@@ -1,0 +1,48 @@
+services:
+  profile-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - '50051:50051'
+    environment:
+      NODE_ENV: production
+      GRPC_HOST: 0.0.0.0
+      PROFILE_SERVICE_URL: ${PROFILE_SERVICE_URL}
+      FILES_SERVICE_PORT: 50052
+      ADDRESS_SERVICE_PORT: 50053
+      COMMUNICATION_SERVICE_PORT: 50054
+      ORGANIZATION_SERVICE_PORT: 50055
+      FINANCIAL_SERVICE_PORT: 50056
+      ADMIN_SERVICE_PORT: 50057
+      FINANCIALS_SERVICE_URL: localhost:50056
+      OPERATIONS_SERVICE_URL: localhost:50059
+      # Postgres - set DATABASE_URL to your Render Postgres internal/external URL
+      DATABASE_URL: ${DATABASE_URL}
+      # Redis - uses the container below
+      REDIS_URL: redis://redis:6379
+      # JWT
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_AUTH_SECRET: ${JWT_AUTH_SECRET}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6380:6379'
+    volumes:
+      - profile_redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  profile_redis_data:

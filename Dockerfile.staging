@@ -1,0 +1,48 @@
+# Staging Dockerfile for Profile Service
+# Uses Debian (node:22) to avoid Prisma/OpenSSL issues on Alpine
+FROM node:22 AS builder
+
+WORKDIR /app
+
+RUN npm config set registry https://registry.npmjs.org/
+
+COPY package*.json ./
+COPY prisma ./prisma/
+
+RUN npm install -g @nestjs/cli && npm install
+
+COPY . .
+
+RUN npx prisma generate
+RUN npm run build
+
+# ─────────────────────────────────────────
+FROM node:22-slim AS staging
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y openssl postgresql-client && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -g 1001 nodejs && useradd -u 1001 -g nodejs nestjs
+
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+
+COPY --chown=nestjs:nodejs prisma ./prisma
+COPY --chown=nestjs:nodejs src/shared/proto ./src/shared/proto
+COPY --chown=nestjs:nodejs healthcheck.js ./healthcheck.js
+COPY --chown=nestjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
+
+RUN chmod +x ./docker-entrypoint.sh
+
+USER nestjs
+
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD node healthcheck.js
+
+ENTRYPOINT ["./docker-entrypoint.sh"]

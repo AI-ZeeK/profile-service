@@ -1,0 +1,46 @@
+services:
+  profile-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    entrypoint: ['/bin/sh', './docker-entrypoint.sh']
+    working_dir: /app
+    ports:
+      - '50051:50051'
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:xxxpostgresxxx@postgres:5432/djengo_profiles?schema=public
+      GRPC_HOST: 0.0.0.0
+      PROFILE_SERVICE_PORT: 50051
+      FILES_SERVICE_PORT: 50052
+      ADDRESS_SERVICE_PORT: 50053
+      COMMUNICATION_SERVICE_PORT: 50054
+      ORGANIZATION_SERVICE_PORT: 50055
+      FINANCIAL_SERVICE_PORT: 50056
+      ADMIN_SERVICE_PORT: 50057
+      FINANCIALS_SERVICE_URL: localhost:50056
+      OPERATIONS_SERVICE_URL: localhost:50059
+      JWT_ACCESS_SECRET: aB3dE7fG9hJ
+      JWT_REFRESH_SECRET: xY2zA8bC4dE6fG
+      JWT_AUTH_SECRET: x454Y2zA8bC4dE6fG
+    depends_on:
+      - postgres
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 'xxxpostgresxxx'
+      POSTGRES_DB: djengo_profiles
+    ports:
+      - '5432:5432'
+    volumes:
+      - profile_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  profile_postgres_data:

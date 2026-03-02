@@ -7,13 +7,13 @@ import { RabbitmqModule } from 'src/rabbitmq/rabbitmq.module';
 import { BusinessUserProcessor } from './organizations/create-business-user.processor';
 import { CommsProcessor } from './communication/comms.processor';
 import { CommunicationModule } from 'src/modules/communication/communication.module';
-import { COMMS_QUEUE_ENUM } from './queue.enum';
+import { BUSINESS_USER_QUEUE_ENUM, COMMS_QUEUE_ENUM } from './queue.enum';
 
 @Module({
   imports: [
     BullModule.registerQueue(
       { name: 'organization' },
-      { name: 'business-user' },
+      { name: BUSINESS_USER_QUEUE_ENUM.BASE },
       {
         name: COMMS_QUEUE_ENUM.BASE,
       },

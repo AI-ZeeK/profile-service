@@ -1,5 +1,6 @@
 import { configDotenv } from 'dotenv';
-import { bool, cleanEnv, port, str } from 'envalid';
+import { cleanEnv, port, str } from 'envalid';
+
 export default () => ({
   grpc: {
     host: process.env.GRPC_HOST ?? '127.0.0.1',
@@ -21,13 +22,14 @@ export const Env = cleanEnv(process.env, {
   JWT_REFRESH_SECRET: str(),
   // JWT_REFRESH_EXPIRY: str(),
   DATABASE_URL: str(),
-  PROFILE_SERVICE_PORT: port(),
-  FILES_SERVICE_PORT: str(),
-  ADDRESS_SERVICE_PORT: str(),
-  COMMUNICATION_SERVICE_PORT: str(),
-  ORGANIZATION_SERVICE_PORT: str(),
-  FINANCIAL_SERVICE_PORT: str(),
-  ADMIN_SERVICE_PORT: str(),
+  REDIS_URL: str({ default: 'redis://localhost:6379' }),
+  PROFILE_SERVICE_URL: str(),
+  FILES_SERVICE_URL: str(),
+  ADDRESS_SERVICE_URL: str(),
+  COMMUNICATION_SERVICE_URL: str(),
+  ORGANIZATION_SERVICE_URL: str(),
+  FINANCIAL_SERVICE_URL: str(),
+  ADMIN_SERVICE_URL: str(),
   FINANCIALS_SERVICE_URL: str(),
   OPERATIONS_SERVICE_URL: str(),
   GRPC_HOST: str(),

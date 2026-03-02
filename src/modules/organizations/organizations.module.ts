@@ -3,6 +3,7 @@ import { OrganizationsService } from './organizations.service';
 import { ORGANIZATION_PACKAGE_NAME } from 'src/shared/dependencies/organization.pb';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
+import { Env } from 'src/config/configuration';
 
 @Module({
   imports: [
@@ -13,9 +14,7 @@ import { join } from 'path';
         options: {
           package: ORGANIZATION_PACKAGE_NAME,
           protoPath: join(process.cwd(), 'src/shared/proto/organization.proto'),
-          url:
-            process.env.ORGANIZATION_SERVICE_URL ||
-            `0.0.0.0:${process.env.ORGANIZATION_SERVICE_PORT}`,
+          url: Env.ORGANIZATION_SERVICE_URL,
         },
       },
     ]),

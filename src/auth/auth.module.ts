@@ -6,7 +6,10 @@ import { UserModule } from 'src/user/user.module';
 import { SharedModule } from 'src/modules/shared.module';
 import { BullModule } from '@nestjs/bullmq';
 import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
-import { COMMS_QUEUE_ENUM } from 'src/queues/queue.enum';
+import {
+  COMMS_QUEUE_ENUM,
+  ORGANIZATION_QUEUE_ENUM,
+} from 'src/queues/queue.enum';
 
 @Module({
   imports: [
@@ -15,7 +18,7 @@ import { COMMS_QUEUE_ENUM } from 'src/queues/queue.enum';
     forwardRef(() => RabbitmqModule),
     BullModule.registerQueue(
       {
-        name: 'organization',
+        name: ORGANIZATION_QUEUE_ENUM.BASE,
       },
       {
         name: COMMS_QUEUE_ENUM.BASE,

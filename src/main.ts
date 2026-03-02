@@ -7,6 +7,7 @@ import { Logger } from '@nestjs/common';
 import { PROFILE_PACKAGE_NAME } from './shared/dependencies/profile.pb';
 import { CamelCaseInterceptor } from './middleware/interceptors/camel-case.interceptor';
 import { GrpcLoggerInterceptor } from './middleware/grpc-logger.interceptor';
+import { Env } from './config/configuration';
 
 async function bootstrap() {
   const logger = new Logger('ProfileService');
@@ -19,7 +20,7 @@ async function bootstrap() {
       options: {
         package: PROFILE_PACKAGE_NAME,
         protoPath: join(process.cwd(), 'src/shared/proto/profile.proto'),
-        url: `${process.env.GRPC_HOST}:${process.env.PROFILE_SERVICE_PORT}`,
+        url: `${Env.PROFILE_SERVICE_URL}`,
       },
     },
   );
@@ -30,7 +31,7 @@ async function bootstrap() {
 
   await app.listen();
   logger.log(
-    `Profile Service is listening on ${process.env.GRPC_HOST}:${process.env.PROFILE_SERVICE_PORT}`,
+    `Profile Service is listening on ${Env.PROFILE_SERVICE_URL} (gRPC)`,
   );
   logger.log('Profile Service is ready to accept connections');
 }

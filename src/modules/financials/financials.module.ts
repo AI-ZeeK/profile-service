@@ -3,6 +3,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { FINANCIALS_PACKAGE_NAME } from 'src/shared/dependencies/financials.pb';
 import { FinancialsService } from './financials.service';
+import { Env } from 'src/config/configuration';
 
 @Module({
   imports: [
@@ -13,9 +14,7 @@ import { FinancialsService } from './financials.service';
         options: {
           package: FINANCIALS_PACKAGE_NAME,
           protoPath: join(process.cwd(), 'src/shared/proto/financials.proto'),
-          url:
-            process.env.FINANCIALS_SERVICE_URL ||
-            `0.0.0.0:${process.env.FINANCIALS_SERVICE_PORT}`,
+          url: Env.FINANCIALS_SERVICE_URL,
         },
       },
     ]),
