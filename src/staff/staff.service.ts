@@ -13,9 +13,11 @@ import {
 import { CommunicationService } from 'src/modules/communication/communication.service';
 import { OrganizationsService } from 'src/modules/organizations/organizations.service';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 import { InvitationStatus, Staff } from '@prisma/client';
 import { ADDRESS_TYPE_ENUM, Helpers } from '@djengo/proto-contracts';
 import { AddressService } from 'src/modules/address/address.service';
+
 
 @Injectable()
 export class StaffService {
@@ -586,6 +588,7 @@ export class StaffService {
       phoneNumber,
       countryCode,
       address,
+      password
     } = data;
     try {
       const invitation = await this.prisma.staffInvitation.findUnique({
@@ -656,6 +659,8 @@ export class StaffService {
         }
       } else {
         // Create user
+              const hashed_password = await bcrypt.hash(password, saltRounds);
+
         user = await this.prisma.user.create({
           data: {
             email: invitation.email,
@@ -663,6 +668,7 @@ export class StaffService {
             last_name: lastName,
             phone_number: phoneNumber || null,
             country_code: countryCode || '',
+            password:hashed_password
           },
         });
         // Create address for user
