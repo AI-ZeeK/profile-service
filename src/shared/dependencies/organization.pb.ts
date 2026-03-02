@@ -16,6 +16,16 @@ export enum RoleType {
   UNRECOGNIZED = -1,
 }
 
+export enum DepartmentTypeEnum {
+  KITCHEN = 0,
+  RECEPTION = 1,
+  HR = 2,
+  LEGAL = 3,
+  OPERATIONS = 4,
+  CUSTOM = 5,
+  UNRECOGNIZED = -1,
+}
+
 export interface CompanyRoleRequest {
   companyId: string;
   roleId: string;
@@ -287,6 +297,91 @@ export interface CreateCompanyRequest {
   mainBranch: MainBranch | undefined;
 }
 
+export interface CreateDepartmentRequest {
+  organizationId: string;
+  companyId: string;
+  branchId?: string | undefined;
+  name: string;
+  description?: string | undefined;
+  departmentTypeId?: string | undefined;
+  creatorId: string;
+}
+
+export interface UpdateDepartmentRequest {
+  organizationId: string;
+  departmentId: string;
+  companyId: string;
+  branchId?: string | undefined;
+  name?: string | undefined;
+  description?: string | undefined;
+  departmentTypeId?: string | undefined;
+  isActive?: boolean | undefined;
+}
+
+export interface CreateDepartmentTypeRequest {
+  organizationId: string;
+  companyId: string;
+  branchId?: string | undefined;
+  name: string;
+  description?: string | undefined;
+  type: DepartmentTypeEnum;
+  creatorId: string;
+}
+
+export interface UpdateDepartmentTypeRequest {
+  organizationId: string;
+  departmentTypeId: string;
+  companyId: string;
+  branchId?: string | undefined;
+  name: string;
+  description?: string | undefined;
+  type: DepartmentTypeEnum;
+}
+
+export interface GetDepartmentTypesRequest {
+  organizationId: string;
+  companyId: string;
+  branchId?: string | undefined;
+}
+
+export interface GetDepartmentTypeRequest {
+  organizationId: string;
+  departmentTypeId: string;
+  companyId: string;
+}
+
+export interface DeleteDepartmentTypeRequest {
+  organizationId: string;
+  companyId: string;
+  departmentTypeId: string;
+}
+
+export interface GetDepartmentsRequest {
+  organizationId: string;
+  companyId: string;
+  branchId?: string | undefined;
+  isActive?: boolean | undefined;
+}
+
+export interface GetDepartmentRequest {
+  organizationId: string;
+  departmentId: string;
+  companyId: string;
+}
+
+export interface DepartmentResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+  department?: DepartmentWithType | undefined;
+}
+
+export interface GetDepartmentsResponse {
+  success: boolean;
+  error?: string | undefined;
+  departments: DepartmentWithType[];
+}
+
 export interface MainBranch {
   name?: string | undefined;
   email?: string | undefined;
@@ -319,6 +414,53 @@ export interface CreateOrganizationRequest {
   registrationDate: string;
 }
 
+export interface CreateDepartmentRoleRequest {
+  organizationId: string;
+  companyId: string;
+  branchId: string;
+  departmentId: string;
+  name: string;
+  description?: string | undefined;
+  levelNumber: number;
+  reportsTo?: string | undefined;
+  permissions: Permission[];
+  staffIds: string[];
+  creatorId: string;
+}
+
+export interface UpdateDepartmentRoleRequest {
+  organizationId: string;
+  roleId: string;
+  companyId: string;
+  name?: string | undefined;
+  description?: string | undefined;
+  levelNumber?: number | undefined;
+  reportsTo?: string | undefined;
+  permissions: Permission[];
+  staffIds: string[];
+  isActive?: boolean | undefined;
+}
+
+export interface GetDepartmentRolesRequest {
+  organizationId: string;
+  departmentId: string;
+  companyId: string;
+  branchId?: string | undefined;
+}
+
+export interface GetDepartmentRoleRequest {
+  organizationId: string;
+  roleId: string;
+  companyId: string;
+}
+
+export interface AssignStaffDepartmentRoleRequest {
+  organizationId: string;
+  roleId: string;
+  staffIds: string[];
+  companyId: string;
+}
+
 export interface GetOrganizationRequest {
   organizationId: string;
 }
@@ -330,6 +472,32 @@ export interface OrganizationResponse {
   company: Company | undefined;
   organizationId: string;
   message: string;
+}
+
+export interface DepartmentTypeResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+  departmentType?: DepartmentType | undefined;
+}
+
+export interface GetDepartmentTypesResponse {
+  success: boolean;
+  error?: string | undefined;
+  departmentTypes: DepartmentType[];
+}
+
+export interface DepartmentRoleResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+  departmentRole?: DepartmentRoleData | undefined;
+}
+
+export interface GetDepartmentRolesResponse {
+  success: boolean;
+  error?: string | undefined;
+  departmentRoles: DepartmentRoleData[];
 }
 
 /** 🏗️ DATA MODELS */
@@ -538,6 +706,46 @@ export interface GetOrganizationsResponse {
   meta: PaginationMeta | undefined;
 }
 
+export interface DepartmentType {
+  departmentTypeId: string;
+  companyId: string;
+  branchId?: string | undefined;
+  name: string;
+  description?: string | undefined;
+  type: DepartmentTypeEnum;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | undefined;
+}
+
+export interface DepartmentWithType {
+  departmentId: string;
+  companyId: string;
+  branchId?: string | undefined;
+  name: string;
+  description?: string | undefined;
+  isActive: boolean;
+  departmentTypeId?: string | undefined;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | undefined;
+  departmentType?: DepartmentType | undefined;
+}
+
+export interface DepartmentRoleData {
+  roleId: string;
+  companyId: string;
+  branchId: string;
+  departmentId: string;
+  name: string;
+  slug: string;
+  description?: string | undefined;
+  isActive: boolean;
+  levelNumber: number;
+  reportsTo?: string | undefined;
+  entityPermissions: EntityPermission[];
+}
+
 export const ORGANIZATION_PACKAGE_NAME = "organization";
 
 /** 🏢 Organization Service - handles organization and branch management */
@@ -614,6 +822,38 @@ export interface OrganizationServiceClient {
   topPerformingOrganizations(
     request: TopPerformingOrganizationsRequest,
   ): Observable<TopPerformingOrganizationsResponse>;
+
+  createDepartmentType(request: CreateDepartmentTypeRequest): Observable<DepartmentTypeResponse>;
+
+  updateDepartmentType(request: UpdateDepartmentTypeRequest): Observable<DepartmentTypeResponse>;
+
+  getDepartmentTypes(request: GetDepartmentTypesRequest): Observable<GetDepartmentTypesResponse>;
+
+  getDepartmentType(request: GetDepartmentTypeRequest): Observable<DepartmentTypeResponse>;
+
+  deleteDepartmentType(request: DeleteDepartmentTypeRequest): Observable<UtilitiesResponse>;
+
+  /** Departments */
+
+  createDepartment(request: CreateDepartmentRequest): Observable<DepartmentResponse>;
+
+  updateDepartment(request: UpdateDepartmentRequest): Observable<DepartmentResponse>;
+
+  getDepartments(request: GetDepartmentsRequest): Observable<GetDepartmentsResponse>;
+
+  getDepartment(request: GetDepartmentRequest): Observable<DepartmentResponse>;
+
+  /** Department Roles */
+
+  createDepartmentRole(request: CreateDepartmentRoleRequest): Observable<DepartmentRoleResponse>;
+
+  updateDepartmentRole(request: UpdateDepartmentRoleRequest): Observable<DepartmentRoleResponse>;
+
+  getDepartmentRoles(request: GetDepartmentRolesRequest): Observable<GetDepartmentRolesResponse>;
+
+  getDepartmentRole(request: GetDepartmentRoleRequest): Observable<DepartmentRoleResponse>;
+
+  assignStaffDepartmentRole(request: AssignStaffDepartmentRoleRequest): Observable<UtilitiesResponse>;
 
   /** Tables */
 
@@ -749,6 +989,66 @@ export interface OrganizationServiceController {
     | Observable<TopPerformingOrganizationsResponse>
     | TopPerformingOrganizationsResponse;
 
+  createDepartmentType(
+    request: CreateDepartmentTypeRequest,
+  ): Promise<DepartmentTypeResponse> | Observable<DepartmentTypeResponse> | DepartmentTypeResponse;
+
+  updateDepartmentType(
+    request: UpdateDepartmentTypeRequest,
+  ): Promise<DepartmentTypeResponse> | Observable<DepartmentTypeResponse> | DepartmentTypeResponse;
+
+  getDepartmentTypes(
+    request: GetDepartmentTypesRequest,
+  ): Promise<GetDepartmentTypesResponse> | Observable<GetDepartmentTypesResponse> | GetDepartmentTypesResponse;
+
+  getDepartmentType(
+    request: GetDepartmentTypeRequest,
+  ): Promise<DepartmentTypeResponse> | Observable<DepartmentTypeResponse> | DepartmentTypeResponse;
+
+  deleteDepartmentType(
+    request: DeleteDepartmentTypeRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  /** Departments */
+
+  createDepartment(
+    request: CreateDepartmentRequest,
+  ): Promise<DepartmentResponse> | Observable<DepartmentResponse> | DepartmentResponse;
+
+  updateDepartment(
+    request: UpdateDepartmentRequest,
+  ): Promise<DepartmentResponse> | Observable<DepartmentResponse> | DepartmentResponse;
+
+  getDepartments(
+    request: GetDepartmentsRequest,
+  ): Promise<GetDepartmentsResponse> | Observable<GetDepartmentsResponse> | GetDepartmentsResponse;
+
+  getDepartment(
+    request: GetDepartmentRequest,
+  ): Promise<DepartmentResponse> | Observable<DepartmentResponse> | DepartmentResponse;
+
+  /** Department Roles */
+
+  createDepartmentRole(
+    request: CreateDepartmentRoleRequest,
+  ): Promise<DepartmentRoleResponse> | Observable<DepartmentRoleResponse> | DepartmentRoleResponse;
+
+  updateDepartmentRole(
+    request: UpdateDepartmentRoleRequest,
+  ): Promise<DepartmentRoleResponse> | Observable<DepartmentRoleResponse> | DepartmentRoleResponse;
+
+  getDepartmentRoles(
+    request: GetDepartmentRolesRequest,
+  ): Promise<GetDepartmentRolesResponse> | Observable<GetDepartmentRolesResponse> | GetDepartmentRolesResponse;
+
+  getDepartmentRole(
+    request: GetDepartmentRoleRequest,
+  ): Promise<DepartmentRoleResponse> | Observable<DepartmentRoleResponse> | DepartmentRoleResponse;
+
+  assignStaffDepartmentRole(
+    request: AssignStaffDepartmentRoleRequest,
+  ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
   /** Tables */
 
   getOrganizations(
@@ -784,6 +1084,20 @@ export function OrganizationServiceControllerMethods() {
       "getOrganizationAnalytics",
       "totalOrganizations",
       "topPerformingOrganizations",
+      "createDepartmentType",
+      "updateDepartmentType",
+      "getDepartmentTypes",
+      "getDepartmentType",
+      "deleteDepartmentType",
+      "createDepartment",
+      "updateDepartment",
+      "getDepartments",
+      "getDepartment",
+      "createDepartmentRole",
+      "updateDepartmentRole",
+      "getDepartmentRoles",
+      "getDepartmentRole",
+      "assignStaffDepartmentRole",
       "getOrganizations",
     ];
     for (const method of grpcMethods) {

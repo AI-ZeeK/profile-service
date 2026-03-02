@@ -336,6 +336,7 @@ export interface AcceptInvitationRequest {
   lastName: string;
   phoneNumber?: string | undefined;
   countryCode?: string | undefined;
+  password: string;
   address: AddressRequest | undefined;
 }
 
