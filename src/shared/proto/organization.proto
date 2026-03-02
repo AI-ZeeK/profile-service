@@ -265,7 +265,7 @@ message ValidateCompanyReferenceRequest {
 message ValidateCompanyReferenceResponse {
   bool success = 1;
   optional string error = 2;
-  string company_id = 3;
+  Company company = 3;
 }
 
 message VerifyCompanyIdRequest {

@@ -2,18 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
-  CompanyIdRequest,
+  AcceptInvitationRequest,
   ManyStaffDetailsRequest,
   PaginatedCompanyRequest,
   RequestFilter,
+  ResendStaffInvitationRequest,
   SendStaffInvitationsRequest,
   StaffDetailsRequest,
 } from 'src/shared/dependencies/profile.pb';
 import { CommunicationService } from 'src/modules/communication/communication.service';
 import { OrganizationsService } from 'src/modules/organizations/organizations.service';
 import * as crypto from 'crypto';
-import { InvitationStatus } from '@prisma/client';
-import { Helpers } from '@djengo/proto-contracts';
+import { InvitationStatus, Staff } from '@prisma/client';
+import { ADDRESS_TYPE_ENUM, Helpers } from '@djengo/proto-contracts';
+import { AddressService } from 'src/modules/address/address.service';
 
 @Injectable()
 export class StaffService {
@@ -21,6 +23,7 @@ export class StaffService {
     private prisma: PrismaService,
     private communicationService: CommunicationService,
     private organizationService: OrganizationsService,
+    private addressService: AddressService,
   ) {}
 
   async getStaffDetails(data: StaffDetailsRequest) {
@@ -93,6 +96,9 @@ export class StaffService {
         orderBy,
         skip: (page - 1) * pageSize,
         take: pageSize,
+        include: {
+          user: true,
+        },
       });
 
       for (const staff of staffs as any) {
@@ -100,6 +106,7 @@ export class StaffService {
           companyId: data.companyId,
           roleId: staff.role_id || '',
         });
+
         staff.role = role.role || null;
         staff.created_at = staff.created_at.toISOString();
       }
@@ -218,7 +225,7 @@ export class StaffService {
       }
 
       const companyName = companyVerification.company?.name || 'the company';
-      const baseUrl = process.env.FRONTEND_URL || 'https://app.djengo.com';
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const expirationHours = 4;
       const emails = data.invitations.map((inv) => inv.email.toLowerCase());
 
@@ -457,7 +464,7 @@ export class StaffService {
       for (let i = 0; i < invitationsToCreate.length; i++) {
         const inv = invitationsToCreate[i];
         const createdInv = createdInvitations[i];
-        const invitationUrl = `${baseUrl}/invite/accept?code=${inv.invitationCode}`;
+        const invitationUrl = `${baseUrl}/staff-onboarding?code=${inv.invitationCode}`;
 
         // Push email promise without awaiting
         emailPromises.push(
@@ -504,104 +511,191 @@ export class StaffService {
   }
 
   /**
-   * Mark invitation as viewed
+   * Resend a staff invitation if expired. Updates status to PENDING and sends email again.
+   * Cannot resend for DECLINED or ACCEPTED invitations.
    */
-  async markInvitationViewed(invitationCode: string) {
+  async resendStaffInvitation({
+    invitationCode,
+  }: ResendStaffInvitationRequest) {
     try {
       const invitation = await this.prisma.staffInvitation.findUnique({
         where: { invitation_code: invitationCode },
       });
-
       if (!invitation) {
         throw new RpcException('Invitation not found');
       }
-
-      if (invitation.expires_at < new Date()) {
-        await this.prisma.staffInvitation.update({
-          where: { invitation_code: invitationCode },
-          data: { status: 'EXPIRED' },
-        });
-        throw new RpcException('Invitation has expired');
+      if (invitation.status === InvitationStatus.ACCEPTED) {
+        throw new RpcException('Cannot resend: invitation already accepted');
+      }
+      if (invitation.status === InvitationStatus.DECLINED) {
+        throw new RpcException('Cannot resend: invitation was declined');
+      }
+      if (
+        invitation.status === InvitationStatus.PENDING &&
+        invitation.expires_at > new Date()
+      ) {
+        throw new RpcException('Cannot resend: invitation is still active');
       }
 
-      // Only update if not already viewed
-      if (!invitation.responsed_at && invitation.status === 'PENDING') {
-        await this.prisma.staffInvitation.update({
-          where: { invitation_code: invitationCode },
-          data: {
-            status: 'VIEWED',
-            responsed_at: new Date(),
-          },
-        });
-      }
+      // Generate new expiration date
+      const expirationHours = 4;
+      const newExpiresAt = new Date();
+      newExpiresAt.setHours(newExpiresAt.getHours() + expirationHours);
 
-      return {
-        success: true,
-        invitation,
-      };
-    } catch (error) {
-      throw new RpcException(
-        `Failed to mark invitation as viewed: ${error.message}`,
-      );
-    }
-  }
-
-  /**
-   * Accept staff invitation and create staff profile
-   */
-  async acceptInvitation(invitationCode: string, userId: string) {
-    try {
-      const invitation = await this.prisma.staffInvitation.findUnique({
+      // Update invitation status and expiration
+      await this.prisma.staffInvitation.update({
         where: { invitation_code: invitationCode },
-      });
-
-      if (!invitation) {
-        throw new RpcException('Invitation not found');
-      }
-
-      if (invitation.status === 'ACCEPTED') {
-        throw new RpcException('Invitation already accepted');
-      }
-
-      if (invitation.status === 'DECLINED') {
-        throw new RpcException('Invitation was declined');
-      }
-
-      if (invitation.expires_at < new Date()) {
-        await this.prisma.staffInvitation.update({
-          where: { invitation_code: invitationCode },
-          data: { status: 'EXPIRED' },
-        });
-        throw new RpcException('Invitation has expired');
-      }
-
-      // Check if user already has active staff profile for this company
-      const existingStaff = await this.prisma.staff.findFirst({
-        where: {
-          user_id: userId,
-          company_id: invitation.company_id,
-          is_active: true,
+        data: {
+          status: InvitationStatus.PENDING,
+          expires_at: newExpiresAt,
+          responsed_at: null,
         },
       });
 
-      if (existingStaff) {
-        throw new RpcException('You already work for this company');
+      // Send invitation email again
+      const company = await this.organizationService.getCompanyById(
+        invitation.company_id,
+      );
+      const companyName = company?.name || 'the company';
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const invitationUrl = `${baseUrl}/staff-onboarding?code=${invitation.invitation_code}`;
+
+      await this.communicationService.sendStaffInvitationMail({
+        email: invitation.email,
+        invitationUrl,
+        companyName,
+      });
+
+      return {
+        success: true,
+        message: 'Invitation resent successfully',
+        invitation_code: invitation.invitation_code,
+        expires_at: newExpiresAt.toISOString(),
+        invitationUrl,
+      };
+    } catch (error) {
+      throw new RpcException(`Failed to resend invitation: ${error.message}`);
+    }
+  }
+
+  async acceptInvitation(data: AcceptInvitationRequest) {
+    const {
+      invitationCode,
+      firstName,
+      lastName,
+      phoneNumber,
+      countryCode,
+      address,
+    } = data;
+    try {
+      const invitation = await this.prisma.staffInvitation.findUnique({
+        where: { invitation_code: invitationCode },
+      });
+
+      if (!invitation) {
+        throw new RpcException('Invitation not found');
+      }
+      if (invitation.status === InvitationStatus.DELETED) {
+        throw new RpcException('Invitation has been deleted');
+      }
+      if (invitation.status === 'ACCEPTED') {
+        throw new RpcException('Invitation already accepted');
+      }
+      if (invitation.status === InvitationStatus.DECLINED) {
+        throw new RpcException('Invitation was declined');
+      }
+      if (invitation.expires_at < new Date()) {
+        await this.prisma.staffInvitation.update({
+          where: { invitation_code: invitationCode },
+          data: { status: InvitationStatus.EXPIRED },
+        });
+        throw new RpcException('Invitation has expired');
       }
 
-      // Create staff profile
-      const staff = await this.prisma.staff.create({
+      const _company_detail =
+        await this.organizationService.validateCompanyReference({
+          companyRef: invitation.company_id || '',
+        });
+      if (!_company_detail.success) {
+        throw new RpcException({ code: 404, message: 'company not found' });
+      }
+      console.log(
+        'Company details for invitation acceptance:',
+        _company_detail,
+        'invitation.company_id',
+        invitation.company_id,
+      );
+
+      let user = await this.prisma.user.findFirst({
+        where: { email: invitation.email },
+      });
+      let staff: Staff | null = null;
+      if (user) {
+        // Check if staff already exists for this company
+        staff = await this.prisma.staff.findFirst({
+          where: {
+            user_id: user.user_id,
+            company_id: _company_detail.company?.companyId,
+            is_active: true,
+          },
+        });
+        if (staff) {
+          // Update invitation status
+          await this.prisma.staffInvitation.update({
+            where: { invitation_code: invitationCode },
+            data: {
+              status: InvitationStatus.ACCEPTED,
+              responsed_at: new Date(),
+            },
+          });
+          return {
+            success: true,
+            message: 'Invitation already accepted, staff exists',
+            staff,
+          };
+        }
+      } else {
+        // Create user
+        user = await this.prisma.user.create({
+          data: {
+            email: invitation.email,
+            first_name: firstName,
+            last_name: lastName,
+            phone_number: phoneNumber || null,
+            country_code: countryCode || '',
+          },
+        });
+        // Create address for user
+        await this.addressService.createOrUpdateAddress({
+          entityType: ADDRESS_TYPE_ENUM.USER_HOME, // ADDRESS_TYPE_ENUM.USER_HOME
+          entityId: user.user_id,
+          street: address?.street || '',
+          building: address?.building || '',
+          apartment: address?.apartment || '',
+          district: address?.district || '',
+          city: address?.city || '',
+          state: address?.state || '',
+          postalCode: address?.postalCode || '',
+          country: address?.country || '',
+          landmark: address?.landmark || '',
+          directionUrl: address?.directionUrl || '',
+          latitude: address?.latitude || 0,
+          longitude: address?.longitude || 0,
+        });
+      }
+
+      staff = await this.prisma.staff.create({
         data: {
-          user_id: userId,
-          company_id: invitation.company_id,
+          company_id: _company_detail.company?.companyId || '',
+          user_id: user.user_id,
+          email: invitation.email,
           branch_id: invitation.branch_id,
           role_id: invitation.role_id,
-          email: invitation.email,
           is_active: true,
           profile_complete: false,
         },
       });
 
-      // Create department assignment if provided
       if (invitation.department_id) {
         await this.prisma.staffDepartment.create({
           data: {
@@ -612,11 +706,10 @@ export class StaffService {
         });
       }
 
-      // Update invitation status
       await this.prisma.staffInvitation.update({
         where: { invitation_code: invitationCode },
         data: {
-          status: 'ACCEPTED',
+          status: InvitationStatus.ACCEPTED,
           responsed_at: new Date(),
         },
       });
@@ -631,9 +724,29 @@ export class StaffService {
     }
   }
 
-  /**
-   * Decline staff invitation
-   */
+  async deleteStaffInvitation(invitationCode: string) {
+    try {
+      const invitation = await this.prisma.staffInvitation.findUnique({
+        where: { invitation_code: invitationCode },
+      });
+      if (!invitation) {
+        throw new RpcException('Invitation not found');
+      }
+      await this.prisma.staffInvitation.update({
+        where: { invitation_code: invitationCode },
+        data: {
+          status: InvitationStatus.DELETED,
+        },
+      });
+      return {
+        success: true,
+        message: 'Invitation deleted successfully',
+      };
+    } catch (error) {
+      throw new RpcException(`Failed to delete invitation: ${error.message}`);
+    }
+  }
+
   async declineInvitation(invitationCode: string) {
     try {
       const invitation = await this.prisma.staffInvitation.findUnique({
@@ -643,15 +756,17 @@ export class StaffService {
       if (!invitation) {
         throw new RpcException('Invitation not found');
       }
-
-      if (invitation.status === 'ACCEPTED') {
+      if (invitation.status === InvitationStatus.DELETED) {
+        throw new RpcException('Invitation has been deleted');
+      }
+      if (invitation.status === InvitationStatus.ACCEPTED) {
         throw new RpcException('Cannot decline an accepted invitation');
       }
 
       await this.prisma.staffInvitation.update({
         where: { invitation_code: invitationCode },
         data: {
-          status: 'DECLINED',
+          status: InvitationStatus.DECLINED,
           responsed_at: new Date(),
         },
       });
@@ -665,9 +780,6 @@ export class StaffService {
     }
   }
 
-  /**
-   * Get invitation details by code
-   */
   async getInvitationByCode(invitationCode: string) {
     try {
       const invitation = await this.prisma.staffInvitation.findUnique({
@@ -681,28 +793,46 @@ export class StaffService {
       // Check if expired
       if (
         invitation.expires_at < new Date() &&
-        invitation.status !== 'EXPIRED'
+        invitation.status !== InvitationStatus.EXPIRED
       ) {
         await this.prisma.staffInvitation.update({
           where: { invitation_code: invitationCode },
-          data: { status: 'EXPIRED' },
+          data: { status: InvitationStatus.EXPIRED },
         });
-        invitation.status = 'EXPIRED' as any;
+        invitation.status = InvitationStatus.EXPIRED;
       }
+
+      if (
+        !invitation.responsed_at &&
+        invitation.status === InvitationStatus.PENDING
+      ) {
+        await this.prisma.staffInvitation.update({
+          where: { invitation_code: invitationCode },
+          data: {
+            status: InvitationStatus.VIEWED,
+            responsed_at: new Date(),
+          },
+        });
+      }
+
+      const company = await this.organizationService.getCompanyById(
+        invitation.company_id,
+      );
+      const role = await this.organizationService.verifyRoleId({
+        companyId: invitation.company_id,
+        roleId: invitation.role_id || '',
+      });
 
       return {
         success: true,
-        invitation,
+        invitation: {
+          ...invitation,
+          role,
+          company,
+        },
       };
     } catch (error) {
       throw new RpcException(`Failed to retrieve invitation: ${error.message}`);
     }
   }
-
-  // /**
-  //  * Generate a secure unique invitation code
-  //  */
-  // private generateInvitationCode(): string {
-  //   return crypto.randomBytes(32).toString('hex');
-  // }
 }

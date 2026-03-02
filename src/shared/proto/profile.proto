@@ -1,3 +1,4 @@
+
 syntax = "proto3";
 
 import "google/protobuf/struct.proto";
@@ -15,7 +16,7 @@ service ProfileService {
   rpc VerifyOtp(VerifyOtpRequest) returns (VerifyOtpResponse);
   rpc Logout(LogoutRequest) returns (SendOtpResponse);
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
-
+  
   rpc GetRoles(EmptyRequest) returns (GetRolesResponse);
   
   // User Management
@@ -26,25 +27,26 @@ service ProfileService {
   rpc GetUserContacts(GetUserContactsRequest) returns (GetUserContactsResponse);
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
   rpc GetUserCountForOrganization(GetUserCountForOrganizationRequest) returns (GetUserCountForOrganizationResponse);
-
+  
   rpc GetLoginHistory(GetLoginHistoryRequest) returns (LoginHistoryResponse);
-
+  
   // BUSINESS ROLES
   rpc CreateOrUpdateBusinessUserRole(CreateOrUpdateBusinessUserRoleRequest) returns (CreateOrUpdateBusinessUserRoleResponse);
-
+  
   rpc FetchOrganizationRoles(OrganizationRoleIdRequest) returns (FetchOrganizationRolesResponse);
   rpc FetchOrganizationRolesCount(OrganizationRoleIdRequest) returns (FetchOrganizationRolesCountResponse);
-
+  
   rpc getStaffDetails(StaffDetailsRequest) returns (StaffDetailsResponse);
   rpc getManyStaffDetails(ManyStaffDetailsRequest) returns (ManyStaffDetailsResponse);
   rpc getCompanyStaffs(PaginatedCompanyRequest) returns (ManyStaffDetailsResponse);
-
+  
   // Staff Invitations
   rpc SendStaffInvitations(SendStaffInvitationsRequest) returns (SendStaffInvitationsResponse);
   rpc GetInvitationByCode(GetInvitationByCodeRequest) returns (GetInvitationByCodeResponse);
-  rpc MarkInvitationViewed(MarkInvitationViewedRequest) returns (InvitationStatusResponse);
   rpc AcceptInvitation(AcceptInvitationRequest) returns (AcceptInvitationResponse);
   rpc DeclineInvitation(DeclineInvitationRequest) returns (InvitationStatusResponse);
+  rpc DeleteStaffInvitation(GetInvitationByCodeRequest) returns (InvitationStatusResponse);
+  rpc ResendStaffInvitation(ResendStaffInvitationRequest) returns (ResendStaffInvitationResponse);
   rpc GetInvitationsByCompany(PaginatedCompanyRequest) returns (GetInvitationsByCompanyResponse);
   
   
@@ -72,6 +74,17 @@ enum RequestFilter {
   ALL = 0;
   ACTIVE = 1;
   INACTIVE = 2; 
+}
+
+// Resend Staff Invitation
+message ResendStaffInvitationRequest {
+  string invitation_code = 1;
+}
+
+message ResendStaffInvitationResponse {
+  bool success = 1;
+  optional string error = 2;
+  string message = 3;
 }
 
 message PaginatedCompanyRequest {
@@ -336,6 +349,8 @@ message StaffInvitation {
   optional string responsed_at = 12;
   string created_at = 15;
   string status = 16;
+ optional Company company = 17;
+
 }
 
 message GetInvitationByCodeResponse {
@@ -344,13 +359,14 @@ message GetInvitationByCodeResponse {
   optional StaffInvitation invitation = 3;
 }
 
-message MarkInvitationViewedRequest {
-  string invitation_code = 1;
-}
 
 message AcceptInvitationRequest {
   string invitation_code = 1;
-  string user_id = 2;
+  string first_name = 2;
+  string last_name = 3;
+  optional string phone_number = 4;
+  optional string country_code = 5;
+  AddressRequest address = 6;
 }
 
 message AcceptInvitationResponse {

@@ -307,6 +307,7 @@ enum InvitationStatus {
   ACCEPTED
   DECLINED
   EXPIRED
+  DELETED
 
   @@schema("profiles")
 }

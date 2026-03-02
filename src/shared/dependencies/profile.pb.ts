@@ -74,6 +74,17 @@ export interface LoginHistory {
   source: SessionSource;
 }
 
+/** Resend Staff Invitation */
+export interface ResendStaffInvitationRequest {
+  invitationCode: string;
+}
+
+export interface ResendStaffInvitationResponse {
+  success: boolean;
+  error?: string | undefined;
+  message: string;
+}
+
 export interface PaginatedCompanyRequest {
   /** Company identification */
   companyId: string;
@@ -310,6 +321,7 @@ export interface StaffInvitation {
   responsedAt?: string | undefined;
   createdAt: string;
   status: string;
+  company?: Company | undefined;
 }
 
 export interface GetInvitationByCodeResponse {
@@ -318,13 +330,13 @@ export interface GetInvitationByCodeResponse {
   invitation?: StaffInvitation | undefined;
 }
 
-export interface MarkInvitationViewedRequest {
-  invitationCode: string;
-}
-
 export interface AcceptInvitationRequest {
   invitationCode: string;
-  userId: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string | undefined;
+  countryCode?: string | undefined;
+  address: AddressRequest | undefined;
 }
 
 export interface AcceptInvitationResponse {
@@ -744,11 +756,13 @@ export interface ProfileServiceClient {
 
   getInvitationByCode(request: GetInvitationByCodeRequest): Observable<GetInvitationByCodeResponse>;
 
-  markInvitationViewed(request: MarkInvitationViewedRequest): Observable<InvitationStatusResponse>;
-
   acceptInvitation(request: AcceptInvitationRequest): Observable<AcceptInvitationResponse>;
 
   declineInvitation(request: DeclineInvitationRequest): Observable<InvitationStatusResponse>;
+
+  deleteStaffInvitation(request: GetInvitationByCodeRequest): Observable<InvitationStatusResponse>;
+
+  resendStaffInvitation(request: ResendStaffInvitationRequest): Observable<ResendStaffInvitationResponse>;
 
   getInvitationsByCompany(request: PaginatedCompanyRequest): Observable<GetInvitationsByCompanyResponse>;
 
@@ -870,10 +884,6 @@ export interface ProfileServiceController {
     request: GetInvitationByCodeRequest,
   ): Promise<GetInvitationByCodeResponse> | Observable<GetInvitationByCodeResponse> | GetInvitationByCodeResponse;
 
-  markInvitationViewed(
-    request: MarkInvitationViewedRequest,
-  ): Promise<InvitationStatusResponse> | Observable<InvitationStatusResponse> | InvitationStatusResponse;
-
   acceptInvitation(
     request: AcceptInvitationRequest,
   ): Promise<AcceptInvitationResponse> | Observable<AcceptInvitationResponse> | AcceptInvitationResponse;
@@ -881,6 +891,14 @@ export interface ProfileServiceController {
   declineInvitation(
     request: DeclineInvitationRequest,
   ): Promise<InvitationStatusResponse> | Observable<InvitationStatusResponse> | InvitationStatusResponse;
+
+  deleteStaffInvitation(
+    request: GetInvitationByCodeRequest,
+  ): Promise<InvitationStatusResponse> | Observable<InvitationStatusResponse> | InvitationStatusResponse;
+
+  resendStaffInvitation(
+    request: ResendStaffInvitationRequest,
+  ): Promise<ResendStaffInvitationResponse> | Observable<ResendStaffInvitationResponse> | ResendStaffInvitationResponse;
 
   getInvitationsByCompany(
     request: PaginatedCompanyRequest,
@@ -936,9 +954,10 @@ export function ProfileServiceControllerMethods() {
       "getCompanyStaffs",
       "sendStaffInvitations",
       "getInvitationByCode",
-      "markInvitationViewed",
       "acceptInvitation",
       "declineInvitation",
+      "deleteStaffInvitation",
+      "resendStaffInvitation",
       "getInvitationsByCompany",
       "adminGetUsers",
       "adminUsersAnalytics",

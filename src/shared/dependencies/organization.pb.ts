@@ -219,7 +219,7 @@ export interface ValidateCompanyReferenceRequest {
 export interface ValidateCompanyReferenceResponse {
   success: boolean;
   error?: string | undefined;
-  companyId: string;
+  company: Company | undefined;
 }
 
 export interface VerifyCompanyIdRequest {

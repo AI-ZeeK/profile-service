@@ -7,9 +7,9 @@ import {
   DeclineInvitationRequest,
   GetInvitationByCodeRequest,
   ManyStaffDetailsRequest,
-  MarkInvitationViewedRequest,
   PaginatedCompanyRequest,
   PROFILE_SERVICE_NAME,
+  ResendStaffInvitationRequest,
   SendStaffInvitationsRequest,
   StaffDetailsRequest,
 } from 'src/shared/dependencies/profile.pb';
@@ -50,6 +50,11 @@ export class StaffController {
     this.logger.log('Sending staff invitations:', data);
     return await this.staffService.sendStaffInvitations(data);
   }
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'ResendStaffInvitation')
+  async resendStaffInvitation(data: ResendStaffInvitationRequest) {
+    this.logger.log('Resending staff invitation:', data);
+    return await this.staffService.resendStaffInvitation(data);
+  }
 
   @GrpcMethod(PROFILE_SERVICE_NAME, 'GetInvitationByCode')
   async getInvitationByCode(data: GetInvitationByCodeRequest) {
@@ -57,24 +62,16 @@ export class StaffController {
     return await this.staffService.getInvitationByCode(data.invitationCode);
   }
 
-  @GrpcMethod(PROFILE_SERVICE_NAME, 'MarkInvitationViewed')
-  async markInvitationViewed(data: MarkInvitationViewedRequest) {
-    this.logger.log('Marking invitation as viewed:', data.invitationCode);
-    return await this.staffService.markInvitationViewed(data.invitationCode);
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'DeleteStaffInvitation')
+  async deleteStaffInvitation(data: GetInvitationByCodeRequest) {
+    this.logger.log('Deleting staff invitation:', data.invitationCode);
+    return await this.staffService.deleteStaffInvitation(data.invitationCode);
   }
 
   @GrpcMethod(PROFILE_SERVICE_NAME, 'AcceptInvitation')
   async acceptStaffInvitation(data: AcceptInvitationRequest) {
-    this.logger.log(
-      'Accepting invitation:',
-      data.invitationCode,
-      'for user:',
-      data.userId,
-    );
-    return await this.staffService.acceptInvitation(
-      data.invitationCode,
-      data.userId,
-    );
+    this.logger.log('Accepting invitation:', data.invitationCode, 'for user:');
+    return await this.staffService.acceptInvitation(data);
   }
 
   @GrpcMethod(PROFILE_SERVICE_NAME, 'DeclineInvitation')

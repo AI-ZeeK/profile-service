@@ -27,11 +27,13 @@ import { Helpers, LoginRequest } from '@djengo/proto-contracts';
 import { Queue, tryCatch } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Env } from 'src/config/configuration';
+import { COMMS_QUEUE_ENUM } from 'src/queues/queue.enum';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   constructor(
+    @InjectQueue(COMMS_QUEUE_ENUM.BASE) private commsQueue: Queue,
     @InjectQueue('organization') private orgQueue: Queue,
     private jwtService: JwtService,
     private prisma: PrismaService,
@@ -299,7 +301,7 @@ export class AuthService {
           });
         await this.prisma.staff.create({
           data: {
-            company_id: company?.companyId || '',
+            company_id: company.company?.companyId || '',
             user_id: user.user_id,
             email,
           },
@@ -348,16 +350,33 @@ export class AuthService {
     });
 
     this.logger.log('OTP SENT', otp);
-    try {
-      await this.communicationService.sendOtp({
-        email: email,
-        name: name,
+    // try {
+    //   await this.communicationService.sendOtp({
+    //     email: email,
+    //     name: name,
+    //     otp,
+    //     type: type,
+    //   });
+    // } catch (error) {
+    //   this.logger.error('Error sending OTP email', error);
+    // }
+
+    this.commsQueue.add(
+      COMMS_QUEUE_ENUM.SEND_OTP,
+      {
+        email,
+        name,
         otp,
-        type: type,
-      });
-    } catch (error) {
-      this.logger.error('Error sending OTP email', error);
-    }
+        type,
+      },
+      {
+        attempts: 3, // retry 3 times
+        backoff: {
+          type: 'exponential',
+          delay: 5000, // 5 seconds, then 10, then 20
+        },
+      },
+    );
 
     const { auth_token } = await this.generateAuthToken({
       user_id: user_id,
