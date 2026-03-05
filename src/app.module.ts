@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
+import { BullModule as BullMQModule } from '@nestjs/bullmq';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -13,6 +14,9 @@ import { StaffModule } from './staff/staff.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { Env } from './config/configuration';
 
+const redisHost = Env.REDIS_HOST;
+const redisPort = parseInt(Env.REDIS_PORT, 10);
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -20,7 +24,10 @@ import { Env } from './config/configuration';
       envFilePath: ['.env', 'local.env'],
     }),
     BullModule.forRoot({
-      redis: Env.REDIS_URL,
+      redis: { host: redisHost, port: redisPort },
+    }),
+    BullMQModule.forRoot({
+      connection: { host: redisHost, port: redisPort },
     }),
     PrismaModule,
     UserModule,
