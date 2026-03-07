@@ -57,6 +57,16 @@ fi
 
 echo "✓ Migrations completed successfully"
 
+echo "Running Prisma seed..."
+npm run prisma:seed
+
+if [ $? -ne 0 ]; then
+  echo "✗ Seeding failed!"
+  exit 1
+fi
+
+echo "✓ Seeding completed successfully"
+
 echo "=========================================="
 echo "Starting application (dev mode)..."
 echo "Node version: $(node -v)"

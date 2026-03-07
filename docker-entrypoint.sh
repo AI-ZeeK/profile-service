@@ -57,6 +57,16 @@ fi
 
 echo "✓ Migrations completed successfully"
 
+echo "Running Prisma seed..."
+npm run prisma:seed
+
+if [ $? -ne 0 ]; then
+  echo "✗ Seeding failed!"
+  exit 1
+fi
+
+echo "✓ Seeding completed successfully"
+
 # Verify the correct main.js exists
 echo "Checking application files..."
 MAIN_PATH="dist/src/main.js"

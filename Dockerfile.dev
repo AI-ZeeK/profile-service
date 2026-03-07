@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # Dev Dockerfile for Profile Service
 FROM node:22
 
