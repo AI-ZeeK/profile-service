@@ -13,6 +13,7 @@ import {
   GetUsersRequest,
   AdminUsersAnalyticsRequest,
   GetUserCountForOrganizationRequest,
+  GetOrganizationBusinessUsersRequest,
 } from './shared/dependencies/profile.pb';
 import { BusinessUserService } from './user/business-user.service';
 
@@ -139,6 +140,13 @@ export class AppController {
     this.logger.log(`gRPC: GetBusinessUser ${data.userId}`);
 
     return await this.businessUserService.getBusinessUser(data);
+  }
+
+  @GrpcMethod(PROFILE_SERVICE_NAME, 'GetOrganizationBusinessUsers')
+  async getOrganizationBusinessUsers(
+    data: GetOrganizationBusinessUsersRequest,
+  ) {
+    return await this.businessUserService.getOrganizationBusinessUsers(data);
   }
 
   // @GrpcMethod(PROFILE_SERVICE_NAME, 'ValidateEmail')

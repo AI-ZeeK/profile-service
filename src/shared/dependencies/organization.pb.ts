@@ -461,6 +461,57 @@ export interface AssignStaffDepartmentRoleRequest {
   companyId: string;
 }
 
+/**
+ * / Fetch all entity permissions for a specific role (department role, company role, etc.)
+ * / The RPC name determines which entity_type is queried internally.
+ */
+export interface GetEntityPermissionsRequest {
+  /** UUID of the role whose permissions to fetch */
+  roleId: string;
+  /** Scoping guard */
+  companyId: string;
+}
+
+export interface EntityPermissionDetail {
+  entityPermissionId: string;
+  entityType: string;
+  isGranted: boolean;
+  level: number;
+  grantedAt: string;
+  permission: PermissionDetail | undefined;
+}
+
+export interface PermissionDetail {
+  permissionId: number;
+  permissionName: string;
+  description: string;
+  level: number;
+  category: string;
+}
+
+export interface GetEntityPermissionsResponse {
+  success: boolean;
+  error?: string | undefined;
+  permissions: EntityPermissionDetail[];
+}
+
+/** / A seeded permission group with all its member permissions expanded. */
+export interface PermissionGroupData {
+  groupId: number;
+  groupName: string;
+  description: string;
+  level: number;
+  category: string;
+  permissions: PermissionDetail[];
+  groupType: string;
+}
+
+export interface GetPermissionGroupsResponse {
+  success: boolean;
+  error?: string | undefined;
+  groups: PermissionGroupData[];
+}
+
 export interface GetOrganizationRequest {
   organizationId: string;
 }
@@ -498,6 +549,37 @@ export interface GetDepartmentRolesResponse {
   success: boolean;
   error?: string | undefined;
   departmentRoles: DepartmentRoleData[];
+}
+
+export interface GetDepartmentRoleStaffResponse {
+  success: boolean;
+  error?: string | undefined;
+  roleId: string;
+  roleName: string;
+  staffDepartmentRoles: StaffDepartmentRoleData[];
+}
+
+export interface StaffCompanyRoleData {
+  staffId: string;
+  companyRoleId: string;
+  isActive: boolean;
+  staff?: StaffData | undefined;
+}
+
+export interface GetCompanyRoleStaffResponse {
+  success: boolean;
+  error?: string | undefined;
+  roleId: string;
+  roleName: string;
+  staffCompanyRoles: StaffCompanyRoleData[];
+}
+
+export interface GetCompanyRoleBusinessUsersResponse {
+  success: boolean;
+  error?: string | undefined;
+  roleId: string;
+  roleName: string;
+  businessUserRoles: BusinessUserRole[];
 }
 
 /** 🏗️ DATA MODELS */
@@ -730,6 +812,54 @@ export interface DepartmentWithType {
   updatedAt: string;
   deletedAt?: string | undefined;
   departmentType?: DepartmentType | undefined;
+  departmentRoles: DepartmentRoleData[];
+  branch?: Branch | undefined;
+}
+
+/** Slim user info embedded in staff department role assignments */
+export interface StaffUserInfo {
+  userId: string;
+  email: string;
+  firstName?: string | undefined;
+  lastName?: string | undefined;
+  avatarUrl?: string | undefined;
+  phoneNumber?: string | undefined;
+  username?: string | undefined;
+}
+
+/**
+ * Full staff record mirroring profile-service Staff type
+ * Self-contained so organization.proto does not need to import profile.proto
+ */
+export interface StaffData {
+  staffId: string;
+  companyId: string;
+  userId: string;
+  branchId?: string | undefined;
+  email: string;
+  designation?: string | undefined;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  user?: StaffUserInfo | undefined;
+  roleId?: string | undefined;
+}
+
+/**
+ * Enriched staff record embedded in department role assignments
+ * Populated by the department service via a getManyStaffDetails call to profile-service
+ */
+export interface StaffDepartmentRoleData {
+  staffId: string;
+  departmentRoleId: string;
+  isActive: boolean;
+  companyId?: string | undefined;
+  email?: string | undefined;
+  designation?: string | undefined;
+  createdAt?: string | undefined;
+  updatedAt?: string | undefined;
+  user?: StaffUserInfo | undefined;
+  staff?: StaffData | undefined;
 }
 
 export interface DepartmentRoleData {
@@ -744,6 +874,12 @@ export interface DepartmentRoleData {
   levelNumber: number;
   reportsTo?: string | undefined;
   entityPermissions: EntityPermission[];
+  staffDepartmentRoles: StaffDepartmentRoleData[];
+  superior?: DepartmentRoleData | undefined;
+  subordinates: DepartmentRoleData[];
+  department?: DepartmentWithType | undefined;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const ORGANIZATION_PACKAGE_NAME = "organization";
@@ -813,6 +949,10 @@ export interface OrganizationServiceClient {
 
   getCompanyRole(request: CompanyRoleRequest): Observable<FetchRoleResponse>;
 
+  getCompanyRoleStaff(request: CompanyRoleRequest): Observable<GetCompanyRoleStaffResponse>;
+
+  getCompanyRoleBusinessUsers(request: CompanyRoleRequest): Observable<GetCompanyRoleBusinessUsersResponse>;
+
   /** Analytics */
 
   getOrganizationAnalytics(request: OrganizationAnalyticsRequest): Observable<OrganizationAnalyticsResponse>;
@@ -853,7 +993,25 @@ export interface OrganizationServiceClient {
 
   getDepartmentRole(request: GetDepartmentRoleRequest): Observable<DepartmentRoleResponse>;
 
+  getDepartmentRoleStaff(request: GetDepartmentRoleRequest): Observable<GetDepartmentRoleStaffResponse>;
+
   assignStaffDepartmentRole(request: AssignStaffDepartmentRoleRequest): Observable<UtilitiesResponse>;
+
+  /** Entity Permissions */
+
+  getDepartmentRolePermissions(request: GetEntityPermissionsRequest): Observable<GetEntityPermissionsResponse>;
+
+  getStaffCompanyRolePermissions(request: GetEntityPermissionsRequest): Observable<GetEntityPermissionsResponse>;
+
+  getBusinessUserRolePermissions(request: GetEntityPermissionsRequest): Observable<GetEntityPermissionsResponse>;
+
+  /** Permission Group Catalogs */
+
+  getDepartmentPermissionGroups(request: EmptyRequest): Observable<GetPermissionGroupsResponse>;
+
+  getStaffPermissionGroups(request: EmptyRequest): Observable<GetPermissionGroupsResponse>;
+
+  getBusinessUserPermissionGroups(request: EmptyRequest): Observable<GetPermissionGroupsResponse>;
 
   /** Tables */
 
@@ -972,6 +1130,17 @@ export interface OrganizationServiceController {
     request: CompanyRoleRequest,
   ): Promise<FetchRoleResponse> | Observable<FetchRoleResponse> | FetchRoleResponse;
 
+  getCompanyRoleStaff(
+    request: CompanyRoleRequest,
+  ): Promise<GetCompanyRoleStaffResponse> | Observable<GetCompanyRoleStaffResponse> | GetCompanyRoleStaffResponse;
+
+  getCompanyRoleBusinessUsers(
+    request: CompanyRoleRequest,
+  ):
+    | Promise<GetCompanyRoleBusinessUsersResponse>
+    | Observable<GetCompanyRoleBusinessUsersResponse>
+    | GetCompanyRoleBusinessUsersResponse;
+
   /** Analytics */
 
   getOrganizationAnalytics(
@@ -1045,9 +1214,44 @@ export interface OrganizationServiceController {
     request: GetDepartmentRoleRequest,
   ): Promise<DepartmentRoleResponse> | Observable<DepartmentRoleResponse> | DepartmentRoleResponse;
 
+  getDepartmentRoleStaff(
+    request: GetDepartmentRoleRequest,
+  ):
+    | Promise<GetDepartmentRoleStaffResponse>
+    | Observable<GetDepartmentRoleStaffResponse>
+    | GetDepartmentRoleStaffResponse;
+
   assignStaffDepartmentRole(
     request: AssignStaffDepartmentRoleRequest,
   ): Promise<UtilitiesResponse> | Observable<UtilitiesResponse> | UtilitiesResponse;
+
+  /** Entity Permissions */
+
+  getDepartmentRolePermissions(
+    request: GetEntityPermissionsRequest,
+  ): Promise<GetEntityPermissionsResponse> | Observable<GetEntityPermissionsResponse> | GetEntityPermissionsResponse;
+
+  getStaffCompanyRolePermissions(
+    request: GetEntityPermissionsRequest,
+  ): Promise<GetEntityPermissionsResponse> | Observable<GetEntityPermissionsResponse> | GetEntityPermissionsResponse;
+
+  getBusinessUserRolePermissions(
+    request: GetEntityPermissionsRequest,
+  ): Promise<GetEntityPermissionsResponse> | Observable<GetEntityPermissionsResponse> | GetEntityPermissionsResponse;
+
+  /** Permission Group Catalogs */
+
+  getDepartmentPermissionGroups(
+    request: EmptyRequest,
+  ): Promise<GetPermissionGroupsResponse> | Observable<GetPermissionGroupsResponse> | GetPermissionGroupsResponse;
+
+  getStaffPermissionGroups(
+    request: EmptyRequest,
+  ): Promise<GetPermissionGroupsResponse> | Observable<GetPermissionGroupsResponse> | GetPermissionGroupsResponse;
+
+  getBusinessUserPermissionGroups(
+    request: EmptyRequest,
+  ): Promise<GetPermissionGroupsResponse> | Observable<GetPermissionGroupsResponse> | GetPermissionGroupsResponse;
 
   /** Tables */
 
@@ -1081,6 +1285,8 @@ export function OrganizationServiceControllerMethods() {
       "updateRole",
       "getCompanyRoles",
       "getCompanyRole",
+      "getCompanyRoleStaff",
+      "getCompanyRoleBusinessUsers",
       "getOrganizationAnalytics",
       "totalOrganizations",
       "topPerformingOrganizations",
@@ -1097,7 +1303,14 @@ export function OrganizationServiceControllerMethods() {
       "updateDepartmentRole",
       "getDepartmentRoles",
       "getDepartmentRole",
+      "getDepartmentRoleStaff",
       "assignStaffDepartmentRole",
+      "getDepartmentRolePermissions",
+      "getStaffCompanyRolePermissions",
+      "getBusinessUserRolePermissions",
+      "getDepartmentPermissionGroups",
+      "getStaffPermissionGroups",
+      "getBusinessUserPermissionGroups",
       "getOrganizations",
     ];
     for (const method of grpcMethods) {

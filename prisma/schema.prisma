@@ -98,6 +98,7 @@ model BusinessUser {
   email            String             @unique @db.VarChar(255)
   phone_number     String?            @unique @db.VarChar(20)
   organization_id  String             @db.Uuid // Reference to Organization Service
+  company_id       String?             @db.Uuid // Reference to Organization Service
   access_type      BusinessAccessType @default(CREATOR)
   access_level     Int                @default(1)
   is_active        Boolean            @default(true)
@@ -112,6 +113,7 @@ model BusinessUser {
 
   @@unique([user_id, is_active], name: "unique_active_user")
   @@unique([user_id, organization_id])
+  @@unique([user_id, company_id])
   @@index([user_id])
   @@index([organization_id])
   @@map("business_users")

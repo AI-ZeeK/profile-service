@@ -12,6 +12,7 @@ import { UpdateUserDto } from './dto/create-user.dto';
 import { Logger } from '@nestjs/common';
 import {
   CreateOrUpdateBusinessUserRoleRequest,
+  GetOrganizationBusinessUsersRequest,
   GetUserRequest,
 } from 'src/shared/dependencies/profile.pb';
 import { RpcException } from '@nestjs/microservices';
@@ -58,7 +59,10 @@ export class BusinessUserService {
         company: organization?.company,
       };
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new RpcException({
+        code: 400,
+        message: error.message,
+      });
     }
   }
 
@@ -115,7 +119,53 @@ export class BusinessUserService {
         message: 'Business user role handled successfully',
       };
     } catch (error) {
-      throw new BadRequestException(error.message);
+      throw new RpcException({
+        code: 400,
+        message: error.message,
+      });
+    }
+  }
+
+  async getOrganizationBusinessUsers({
+    organizationId,
+    companyId,
+  }: GetOrganizationBusinessUsersRequest) {
+    try {
+      if (companyId) {
+        const companyVerification =
+          await this.organizationService.verifyCompanyId({
+            companyId: companyId,
+            organizationId: organizationId,
+          });
+        if (!companyVerification.success) {
+          throw new RpcException(
+            `Invalid company: ${
+              companyVerification.error || 'Company not found'
+            }`,
+          );
+        }
+      }
+
+      const businessUsers = await this.prisma.businessUser.findMany({
+        where: {
+          organization_id: organizationId,
+          ...(companyId ? { company_id: companyId } : {}),
+        },
+        include: {
+          user: true,
+          business_user_roles: true,
+        },
+      });
+
+      return {
+        success: true,
+        business_users: businessUsers,
+      };
+    } catch (error) {
+      throw new RpcException({
+        code: 400,
+        message: error.message,
+      });
     }
   }
 }

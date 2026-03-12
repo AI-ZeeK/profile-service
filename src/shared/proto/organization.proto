@@ -45,13 +45,15 @@ service OrganizationService {
   rpc UpdateRole(UpdateRoleRequest) returns (UtilitiesResponse);
   rpc GetCompanyRoles(CompanyRolesRequest) returns (FetchRolesResponse);
   rpc GetCompanyRole(CompanyRoleRequest) returns (FetchRoleResponse);
+  rpc GetCompanyRoleStaff(CompanyRoleRequest) returns (GetCompanyRoleStaffResponse);
+  rpc GetCompanyRoleBusinessUsers(CompanyRoleRequest) returns (GetCompanyRoleBusinessUsersResponse);
 
   // Analytics
   rpc GetOrganizationAnalytics(OrganizationAnalyticsRequest) returns (OrganizationAnalyticsResponse);
   rpc TotalOrganizations(EmptyRequest) returns (TotalOrganizationsResponse);
   rpc TopPerformingOrganizations(TopPerformingOrganizationsRequest) returns (TopPerformingOrganizationsResponse);
 
-    rpc CreateDepartmentType(CreateDepartmentTypeRequest) returns (DepartmentTypeResponse);
+  rpc CreateDepartmentType(CreateDepartmentTypeRequest) returns (DepartmentTypeResponse);
   rpc UpdateDepartmentType(UpdateDepartmentTypeRequest) returns (DepartmentTypeResponse);
   rpc GetDepartmentTypes(GetDepartmentTypesRequest) returns (GetDepartmentTypesResponse);
   rpc GetDepartmentType(GetDepartmentTypeRequest) returns (DepartmentTypeResponse);
@@ -68,7 +70,18 @@ service OrganizationService {
   rpc UpdateDepartmentRole(UpdateDepartmentRoleRequest) returns (DepartmentRoleResponse);
   rpc GetDepartmentRoles(GetDepartmentRolesRequest) returns (GetDepartmentRolesResponse);
   rpc GetDepartmentRole(GetDepartmentRoleRequest) returns (DepartmentRoleResponse);
+  rpc GetDepartmentRoleStaff(GetDepartmentRoleRequest) returns (GetDepartmentRoleStaffResponse);
   rpc AssignStaffDepartmentRole(AssignStaffDepartmentRoleRequest) returns (UtilitiesResponse);
+
+  // Entity Permissions
+  rpc GetDepartmentRolePermissions(GetEntityPermissionsRequest) returns (GetEntityPermissionsResponse);
+  rpc GetStaffCompanyRolePermissions(GetEntityPermissionsRequest) returns (GetEntityPermissionsResponse);
+  rpc GetBusinessUserRolePermissions(GetEntityPermissionsRequest) returns (GetEntityPermissionsResponse);
+
+  // Permission Group Catalogs
+  rpc GetDepartmentPermissionGroups(EmptyRequest) returns (GetPermissionGroupsResponse);
+  rpc GetStaffPermissionGroups(EmptyRequest) returns (GetPermissionGroupsResponse);
+  rpc GetBusinessUserPermissionGroups(EmptyRequest) returns (GetPermissionGroupsResponse);
   
   // Tables
   rpc GetOrganizations(GetOrganizationsRequest) returns (GetOrganizationsResponse);
@@ -523,6 +536,55 @@ message AssignStaffDepartmentRoleRequest {
   string company_id = 4;
 }
 
+// ── Permission entity requests / responses ──────────────────────────────────
+
+/// Fetch all entity permissions for a specific role (department role, company role, etc.)
+/// The RPC name determines which entity_type is queried internally.
+message GetEntityPermissionsRequest {
+  string role_id = 1;     // UUID of the role whose permissions to fetch
+  string company_id = 2;  // Scoping guard
+}
+
+message EntityPermissionDetail {
+  string entity_permission_id = 1;
+  string entity_type = 2;
+  bool is_granted = 3;
+  int32 level = 4;
+  string granted_at = 5;
+  PermissionDetail permission = 6;
+}
+
+message PermissionDetail {
+  int32 permission_id = 1;
+  string permission_name = 2;
+  string description = 3;
+  int32 level = 4;
+  string category = 5;
+}
+
+message GetEntityPermissionsResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated EntityPermissionDetail permissions = 3;
+}
+
+/// A seeded permission group with all its member permissions expanded.
+message PermissionGroupData {
+  int32 group_id = 1;
+  string group_name = 2;
+  string description = 3;
+  int32 level = 4;
+  string category = 5;
+  repeated PermissionDetail permissions = 6;
+  string group_type = 7;
+}
+
+message GetPermissionGroupsResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated PermissionGroupData groups = 3;
+}
+
 message GetOrganizationRequest {
   string organization_id = 1;
 }
@@ -563,6 +625,37 @@ message GetDepartmentRolesResponse {
   bool success = 1;
   optional string error = 2;
   repeated DepartmentRoleData department_roles = 3;
+}
+
+message GetDepartmentRoleStaffResponse {
+  bool success = 1;
+  optional string error = 2;
+  string role_id = 3;
+  string role_name = 4;
+  repeated StaffDepartmentRoleData staff_department_roles = 5;
+}
+
+message StaffCompanyRoleData {
+  string staff_id = 1;
+  string company_role_id = 2;
+  bool is_active = 3;
+  optional StaffData staff = 4;
+}
+
+message GetCompanyRoleStaffResponse {
+  bool success = 1;
+  optional string error = 2;
+  string role_id = 3;
+  string role_name = 4;
+  repeated StaffCompanyRoleData staff_company_roles = 5;
+}
+
+message GetCompanyRoleBusinessUsersResponse {
+  bool success = 1;
+  optional string error = 2;
+  string role_id = 3;
+  string role_name = 4;
+  repeated BusinessUserRole business_user_roles = 5;
 }
 
 // 🏗️ DATA MODELS
@@ -818,6 +911,50 @@ message DepartmentWithType {
   string updated_at = 9;
   optional string deleted_at = 10;
   optional DepartmentType department_type = 11;
+  repeated DepartmentRoleData department_roles = 12;
+  optional Branch branch = 13;
+}
+
+// Slim user info embedded in staff department role assignments
+message StaffUserInfo {
+  string user_id = 1;
+  string email = 2;
+  optional string first_name = 3;
+  optional string last_name = 4;
+  optional string avatar_url = 5;
+  optional string phone_number = 6;
+  optional string username = 7;
+}
+
+// Full staff record mirroring profile-service Staff type
+// Self-contained so organization.proto does not need to import profile.proto
+message StaffData {
+  string staff_id = 1;
+  string company_id = 2;
+  string user_id = 3;
+  optional string branch_id = 4;
+  string email = 5;
+  optional string designation = 6;
+  bool is_active = 7;
+  string created_at = 8;
+  string updated_at = 9;
+  optional StaffUserInfo user = 10;
+  optional string role_id = 11;
+}
+
+// Enriched staff record embedded in department role assignments
+// Populated by the department service via a getManyStaffDetails call to profile-service
+message StaffDepartmentRoleData {
+  string staff_id = 1;
+  string department_role_id = 2;
+  bool is_active = 3;
+  optional string company_id = 4;
+  optional string email = 5;
+  optional string designation = 6;
+  optional string created_at = 7;
+  optional string updated_at = 8;
+  optional StaffUserInfo user = 9;
+  optional StaffData staff = 10;
 }
 
 message DepartmentRoleData {
@@ -832,4 +969,10 @@ message DepartmentRoleData {
   int32 level_number = 9;
   optional string reports_to = 10;
   repeated EntityPermission entity_permissions = 11;
+  repeated StaffDepartmentRoleData staff_department_roles = 12;
+  optional DepartmentRoleData superior = 13;
+  repeated DepartmentRoleData subordinates = 14;
+  optional DepartmentWithType department = 15;
+  string created_at = 16;
+  string updated_at = 17;
 }

@@ -536,6 +536,17 @@ export interface BusinessUserResponse {
   company?: Company | undefined;
 }
 
+export interface GetOrganizationBusinessUsersRequest {
+  organizationId: string;
+  companyId?: string | undefined;
+}
+
+export interface GetOrganizationBusinessUsersResponse {
+  success: boolean;
+  error?: string | undefined;
+  businessUsers: BusinessUser[];
+}
+
 export interface UserResponse {
   success: boolean;
   error?: string | undefined;
@@ -776,6 +787,10 @@ export interface ProfileServiceClient {
   activeUsersCount(request: EmptyRequest): Observable<ActiveUsersCountResponse>;
 
   dailyActiveUsersAnalytics(request: EmptyRequest): Observable<DailyActiveUsersAnalyticsResponse>;
+
+  getOrganizationBusinessUsers(
+    request: GetOrganizationBusinessUsersRequest,
+  ): Observable<GetOrganizationBusinessUsersResponse>;
 }
 
 /** 👤 Profile Service - handles user profiles and user management */
@@ -926,6 +941,13 @@ export interface ProfileServiceController {
     | Promise<DailyActiveUsersAnalyticsResponse>
     | Observable<DailyActiveUsersAnalyticsResponse>
     | DailyActiveUsersAnalyticsResponse;
+
+  getOrganizationBusinessUsers(
+    request: GetOrganizationBusinessUsersRequest,
+  ):
+    | Promise<GetOrganizationBusinessUsersResponse>
+    | Observable<GetOrganizationBusinessUsersResponse>
+    | GetOrganizationBusinessUsersResponse;
 }
 
 export function ProfileServiceControllerMethods() {
@@ -964,6 +986,7 @@ export function ProfileServiceControllerMethods() {
       "adminUsersAnalytics",
       "activeUsersCount",
       "dailyActiveUsersAnalytics",
+      "getOrganizationBusinessUsers",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

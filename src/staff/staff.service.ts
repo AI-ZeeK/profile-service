@@ -17,6 +17,7 @@ import * as bcrypt from 'bcryptjs';
 import { InvitationStatus, Staff } from '@prisma/client';
 import { ADDRESS_TYPE_ENUM, Helpers } from '@djengo/proto-contracts';
 import { AddressService } from 'src/modules/address/address.service';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class StaffService {
@@ -25,13 +26,27 @@ export class StaffService {
     private communicationService: CommunicationService,
     private organizationService: OrganizationsService,
     private addressService: AddressService,
+    private userService: UserService,
   ) {}
 
   async getStaffDetails(data: StaffDetailsRequest) {
     try {
-      return this.prisma.staff.findFirst({
+      const staff = await this.prisma.staff.findFirst({
         where: { staff_id: data.staffId, company_id: data.companyId },
+        include: {
+          user: true,
+        },
       });
+      if (!staff) {
+        throw new RpcException('Staff not found');
+      }
+      const user = await this.userService.findOne({
+        user_id: staff.user?.user_id,
+      });
+      if (!user) {
+        throw new RpcException('Associated user not found');
+      }
+      return { staff: Object.assign(staff, { user }) };
     } catch (error) {
       throw new RpcException('Failed to retrieve staff by ID');
     }
@@ -39,9 +54,17 @@ export class StaffService {
 
   async getManyStaffDetails(data: ManyStaffDetailsRequest) {
     try {
-      return this.prisma.staff.findMany({
+      const staffs = await this.prisma.staff.findMany({
         where: { staff_id: { in: data.staffIds }, company_id: data.companyId },
       });
+      for (const staff of staffs as any) {
+        staff.created_at =
+          staff.created_at?.toISOString?.() ?? staff.created_at;
+        staff.updated_at =
+          staff.updated_at?.toISOString?.() ?? staff.updated_at;
+        staff.user = await this.userService.findOne({ user_id: staff.user_id });
+      }
+      return { success: true, staffs };
     } catch (error) {
       throw new RpcException('Failed to retrieve staff details');
     }

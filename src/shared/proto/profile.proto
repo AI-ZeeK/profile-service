@@ -55,6 +55,7 @@ service ProfileService {
 // ANALYTICS
   rpc ActiveUsersCount(EmptyRequest) returns (ActiveUsersCountResponse);
   rpc DailyActiveUsersAnalytics(EmptyRequest) returns (DailyActiveUsersAnalyticsResponse);
+  rpc GetOrganizationBusinessUsers(GetOrganizationBusinessUsersRequest) returns (GetOrganizationBusinessUsersResponse);
 }
 
 message LoginHistoryResponse {
@@ -593,6 +594,17 @@ message BusinessUserResponse {
   optional BusinessUser business_user = 3;
   optional Organization organization = 4;
   optional Company company = 5;
+}
+
+message GetOrganizationBusinessUsersRequest {
+  string organization_id = 1;
+  optional string company_id = 2;
+}
+
+message GetOrganizationBusinessUsersResponse {
+  bool success = 1;
+  optional string error = 2;
+  repeated BusinessUser business_users = 3;
 }
 
 message UserResponse {

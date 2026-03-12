@@ -67,6 +67,16 @@ fi
 
 echo "✓ Seeding completed successfully"
 
+echo "Running PROTO UPDATE..."
+RUN npm run proto:build-all
+
+if [ $? -ne 0 ]; then
+  echo "✗ PROTO update failed!"
+  exit 1
+fi
+
+echo "✓ PROTO update completed successfully"
+
 # Verify the correct main.js exists
 echo "Checking application files..."
 MAIN_PATH="dist/src/main.js"

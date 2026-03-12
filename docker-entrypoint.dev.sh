@@ -57,6 +57,16 @@ fi
 
 echo "✓ Migrations completed successfully"
 
+echo "Regenerating Prisma client..."
+npx prisma generate
+
+if [ $? -ne 0 ]; then
+  echo "✗ Prisma client generation failed!"
+  exit 1
+fi
+
+echo "✓ Prisma client regenerated successfully"
+
 echo "Running Prisma seed..."
 npm run prisma:seed
 
@@ -64,8 +74,8 @@ if [ $? -ne 0 ]; then
   echo "✗ Seeding failed!"
   exit 1
 fi
-
 echo "✓ Seeding completed successfully"
+
 
 echo "=========================================="
 echo "Starting application (dev mode)..."
