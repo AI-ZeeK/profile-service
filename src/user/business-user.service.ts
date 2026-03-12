@@ -17,6 +17,7 @@ import {
 } from 'src/shared/dependencies/profile.pb';
 import { RpcException } from '@nestjs/microservices';
 import { OrganizationsService } from 'src/modules/organizations/organizations.service';
+import { UserService } from './user.service';
 
 type UserWithAvatar<T = {}> = User & {
   avatar_url: string | null;
@@ -29,6 +30,7 @@ export class BusinessUserService {
   constructor(
     private prisma: PrismaService,
     private organizationService: OrganizationsService,
+    private userService: UserService,
   ) {}
 
   async getBusinessUser(payload: GetUserRequest) {
@@ -156,6 +158,11 @@ export class BusinessUserService {
           business_user_roles: true,
         },
       });
+      for (const bu of businessUsers) {
+        const user = await this.userService.findOne({ user_id: bu.user_id });
+        bu.user = user as UserWithAvatar;
+        bu.user.password = '';
+      }
 
       return {
         success: true,

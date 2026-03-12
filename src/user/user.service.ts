@@ -104,7 +104,6 @@ export class UserService {
 
   async validateAccount({ token }: ValidateAccountRequest) {
     try {
-      this.logger.log('HITTING THIS ENDPOINT', token);
       const payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_ACCESS_SECRET,
       });
@@ -124,7 +123,6 @@ export class UserService {
       }
       this.logger.log('user', user);
 
-      console.log('USER VALID,user', user);
       return { success: true, user };
     } catch (error) {
       throw new RpcException({

@@ -526,6 +526,9 @@ export interface BusinessUser {
   accessLevel: number;
   isActive: boolean;
   notes?: string | undefined;
+  createdAt: string;
+  updatedAt: string;
+  user?: User | undefined;
 }
 
 export interface BusinessUserResponse {

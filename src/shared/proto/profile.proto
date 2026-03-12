@@ -586,6 +586,9 @@ message BusinessUser {
   int32 access_level = 7;
   bool is_active = 8;
   optional string notes = 9;
+    string created_at = 10;
+    string updated_at = 11;
+    optional User user = 12;
 }
 
 message BusinessUserResponse {

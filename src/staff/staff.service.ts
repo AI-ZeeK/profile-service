@@ -644,12 +644,6 @@ export class StaffService {
       if (!_company_detail.success) {
         throw new RpcException({ code: 404, message: 'company not found' });
       }
-      console.log(
-        'Company details for invitation acceptance:',
-        _company_detail,
-        'invitation.company_id',
-        invitation.company_id,
-      );
 
       let user = await this.prisma.user.findFirst({
         where: { email: invitation.email },
