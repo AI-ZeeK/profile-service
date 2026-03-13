@@ -4,6 +4,8 @@ FROM node:22 AS builder
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
+
 # Copy all config files first
 COPY package*.json ./
 COPY tsconfig*.json ./
